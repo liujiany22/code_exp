@@ -1,0 +1,7 @@
+cycle,phase,event_name,event_code,timestamp
+0,task,task_start,11,0.069615
+1,eyes_open,eyes_open_start,12,0.082165
+1,eyes_open,eyes_open_end,13,3.101191
+1,eyes_closed,eyes_closed_start,14,3.113819
+1,eyes_closed,eyes_closed_end,15,6.128495
+0,task,task_end,16,6.139428

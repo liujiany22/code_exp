@@ -1,0 +1,7 @@
+base_position,item_id,topic,load_level,video_file,planned_minutes,pretest_form,rating_form,posttest_form,notes
+1,fourier_low,傅立叶变换,low,fourier_low.mp4,5.0,pretest_fourier_low.csv,rating_fourier_low.csv,posttest_fourier_low.csv,replace with actual low-load Fourier stimulus
+2,fourier_medium,傅立叶变换,medium,fourier_medium.mp4,5.0,pretest_fourier_medium.csv,rating_fourier_medium.csv,posttest_fourier_medium.csv,replace with actual medium-load Fourier stimulus
+3,fourier_high,傅立叶变换,high,fourier_high.mp4,5.0,pretest_fourier_high.csv,rating_fourier_high.csv,posttest_fourier_high.csv,replace with actual high-load Fourier stimulus
+4,statistics_low,统计基础,low,statistics_low.mp4,5.0,pretest_statistics_low.csv,rating_statistics_low.csv,posttest_statistics_low.csv,replace with actual low-load statistics stimulus
+5,statistics_medium,统计基础,medium,statistics_medium.mp4,5.0,pretest_statistics_medium.csv,rating_statistics_medium.csv,posttest_statistics_medium.csv,replace with actual medium-load statistics stimulus
+6,statistics_high,统计基础,high,statistics_high.mp4,5.0,pretest_statistics_high.csv,rating_statistics_high.csv,posttest_statistics_high.csv,replace with actual high-load statistics stimulus

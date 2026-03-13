@@ -1,0 +1,213 @@
+118.4611 	EXP 	Running in pilot mode.
+118.4612 	EXP 	corsi_blocks: status = NOT_STARTED
+118.5165 	EXP 	Created window1 = Window(allowGUI=False, allowStencil=True, autoLog=True, backendConf=UNKNOWN, backgroundFit=<method-wrapper '__getattribute__' of attributeSetter object at 0x13b2a04c0>, backgroundImage=<method-wrapper '__getattribute__' of attributeSetter object at 0x13b2a0460>, bitsMode=UNKNOWN, blendMode='avg', bpc=(8, 8, 8), color=array([-1, -1, -1]), colorSpace='rgb', depthBits=8, fullscr=False, gamma=None, gammaErrorPolicy='raise', infoMsg=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x14bcffe80>, multiSample=False, name='window1', numSamples=2, pos=[np.float64(15.0), np.float64(28.0)], screen=0, size=array([2880, 1800]), stencilBits=8, stereo=False, title='PsychoPy', units='height', useFBO=True, useRetina=True, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType='pyglet')
+118.5165 	EXP 	window1: backgroundImage = ''
+118.5166 	EXP 	window1: backgroundFit = 'none'
+118.5169 	EXP 	corsi_blocks: status = STARTED
+118.5599 	EXP 	Created text = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=np.float64(0.05), italic=False, languageStyle='LTR', name='text', opacity=1, ori=0.0, pos=array([0., 0.]), rgb=UNKNOWN, text=str(...), units='height', win=Window(...), wrapWidth=1)
+118.5610 	EXP 	Created blank = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=np.float64(0.2), italic=False, languageStyle='LTR', name='blank', opacity=1, ori=0, pos=array([0., 0.]), rgb=UNKNOWN, text='+', units='height', win=Window(...), wrapWidth=1)
+118.5613 	EXP 	Created blk1_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-1.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk1_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5616 	EXP 	Created blk2_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-2.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk2_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5618 	EXP 	Created blk3_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-3.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk3_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5620 	EXP 	Created blk4_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-4.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk4_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5623 	EXP 	Created blk5_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-5.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk5_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5625 	EXP 	Created blk6_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-6.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk6_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5630 	EXP 	Created blk7_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-7.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk7_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5633 	EXP 	Created blk8_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-8.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk8_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5635 	EXP 	Created blk9_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-9.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk9_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5638 	EXP 	Created blk1 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=0.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk1', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5640 	EXP 	Created blk2 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-1.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk2', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5642 	EXP 	Created blk3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-2.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5645 	EXP 	Created blk4 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-3.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk4', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5647 	EXP 	Created blk5 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-4.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk5', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5649 	EXP 	Created blk6 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-5.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk6', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5652 	EXP 	Created blk7 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-6.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk7', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5654 	EXP 	Created blk8 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-7.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk8', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5656 	EXP 	Created blk9 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-8.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk9', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5813 	EXP 	Created fbtxt = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-1.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=0.05, italic=False, languageStyle='LTR', name='fbtxt', opacity=1, ori=0.0, pos=array([0., 0.]), rgb=UNKNOWN, text='', units='height', win=Window(...), wrapWidth=1)
+118.5815 	EXP 	Created text_2 = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=0.05, italic=False, languageStyle='LTR', name='text_2', opacity=1, ori=0.0, pos=array([0., 0.]), rgb=UNKNOWN, text='', units='height', win=Window(...), wrapWidth=1)
+0.0272 	EXP 	submit_button: autoLog = True
+0.0432 	EXP 	text: autoDraw = True
+0.1635 	DATA 	Mouse: Left button down, pos=(832,273)
+0.1808 	EXP 	New trial (rep=0, index=0): <Trial 0 (0 in rep 0) data={'thisN': 0, 'thisTrialN': 0, 'thisRepN': 0}>
+0.1932 	EXP 	text: autoDraw = False
+0.1932 	EXP 	blk1_3: foreColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk1_3: borderColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk1_3: fillColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk1: foreColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk1: borderColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk1: fillColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk2_3: foreColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk2_3: borderColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk2_3: fillColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk2: foreColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk2: borderColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk2: fillColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk3_3: foreColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk3_3: borderColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk3_3: fillColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk3: foreColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk3: borderColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk3: fillColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blank: autoDraw = True
+0.2635 	DATA 	Mouse:  Left button up, pos=(832,273)
+0.4969 	DATA 	Mouse: Left button down, pos=(832,273)
+0.5910 	DATA 	Mouse:  Left button up, pos=(832,273)
+0.6708 	DATA 	Mouse: Left button down, pos=(832,273)
+0.6854 	EXP 	New trial (rep=0, index=0): <Trial 0 (0 in rep 0) data={'thisN': 0, 'thisTrialN': 0, 'thisRepN': 0}>
+0.7101 	EXP 	blank: autoDraw = False
+0.7101 	EXP 	blk1_3: fillColor = [1, 0, 0]
+0.7101 	EXP 	blk1_3: autoDraw = True
+0.7101 	EXP 	blk2_3: autoDraw = True
+0.7101 	EXP 	blk3_3: autoDraw = True
+0.7101 	EXP 	blk4_3: autoDraw = True
+0.7101 	EXP 	blk5_3: autoDraw = True
+0.7101 	EXP 	blk6_3: autoDraw = True
+0.7101 	EXP 	blk7_3: autoDraw = True
+0.7101 	EXP 	blk8_3: autoDraw = True
+0.7101 	EXP 	blk9_3: autoDraw = True
+0.7799 	DATA 	Mouse:  Left button up, pos=(832,273)
+0.8800 	DATA 	Mouse: Left button down, pos=(832,273)
+0.9801 	DATA 	Mouse:  Left button up, pos=(832,273)
+1.0634 	DATA 	Mouse: Left button down, pos=(832,280)
+1.1468 	DATA 	Mouse:  Left button up, pos=(832,280)
+1.1936 	EXP 	New trial (rep=1, index=0): <Trial 1 (0 in rep 1) data={'thisN': 1, 'thisTrialN': 0, 'thisRepN': 1}>
+1.2101 	EXP 	blk1_3: autoDraw = False
+1.2101 	EXP 	blk2_3: autoDraw = False
+1.2101 	EXP 	blk3_3: autoDraw = False
+1.2101 	EXP 	blk4_3: autoDraw = False
+1.2101 	EXP 	blk5_3: autoDraw = False
+1.2101 	EXP 	blk6_3: autoDraw = False
+1.2101 	EXP 	blk7_3: autoDraw = False
+1.2101 	EXP 	blk8_3: autoDraw = False
+1.2101 	EXP 	blk9_3: autoDraw = False
+1.2101 	EXP 	blk1_3: fillColor = [1, 1, 1]
+1.2101 	EXP 	blk2_3: fillColor = [1, 0, 0]
+1.2101 	EXP 	blk1_3: autoDraw = True
+1.2101 	EXP 	blk2_3: autoDraw = True
+1.2101 	EXP 	blk3_3: autoDraw = True
+1.2101 	EXP 	blk4_3: autoDraw = True
+1.2101 	EXP 	blk5_3: autoDraw = True
+1.2101 	EXP 	blk6_3: autoDraw = True
+1.2101 	EXP 	blk7_3: autoDraw = True
+1.2101 	EXP 	blk8_3: autoDraw = True
+1.2101 	EXP 	blk9_3: autoDraw = True
+1.5682 	DATA 	Mouse: Left button down, pos=(631,517)
+1.6800 	DATA 	Mouse:  Left button up, pos=(631,518)
+1.6933 	EXP 	New trial (rep=2, index=0): <Trial 2 (0 in rep 2) data={'thisN': 2, 'thisTrialN': 0, 'thisRepN': 2}>
+1.7101 	EXP 	blk1_3: autoDraw = False
+1.7101 	EXP 	blk2_3: autoDraw = False
+1.7101 	EXP 	blk3_3: autoDraw = False
+1.7101 	EXP 	blk4_3: autoDraw = False
+1.7101 	EXP 	blk5_3: autoDraw = False
+1.7101 	EXP 	blk6_3: autoDraw = False
+1.7101 	EXP 	blk7_3: autoDraw = False
+1.7101 	EXP 	blk8_3: autoDraw = False
+1.7101 	EXP 	blk9_3: autoDraw = False
+1.7101 	EXP 	blk2_3: fillColor = [1, 1, 1]
+1.7101 	EXP 	blk3_3: fillColor = [1, 0, 0]
+1.7101 	EXP 	blk1_3: autoDraw = True
+1.7101 	EXP 	blk2_3: autoDraw = True
+1.7101 	EXP 	blk3_3: autoDraw = True
+1.7101 	EXP 	blk4_3: autoDraw = True
+1.7101 	EXP 	blk5_3: autoDraw = True
+1.7101 	EXP 	blk6_3: autoDraw = True
+1.7101 	EXP 	blk7_3: autoDraw = True
+1.7101 	EXP 	blk8_3: autoDraw = True
+1.7101 	EXP 	blk9_3: autoDraw = True
+1.8134 	DATA 	Mouse: Left button down, pos=(631,518)
+1.9135 	DATA 	Mouse:  Left button up, pos=(631,518)
+2.0468 	DATA 	Mouse: Left button down, pos=(631,515)
+2.1468 	DATA 	Mouse:  Left button up, pos=(631,515)
+2.2103 	EXP 	blk1_3: autoDraw = False
+2.2103 	EXP 	blk2_3: autoDraw = False
+2.2103 	EXP 	blk3_3: autoDraw = False
+2.2103 	EXP 	blk4_3: autoDraw = False
+2.2103 	EXP 	blk5_3: autoDraw = False
+2.2103 	EXP 	blk6_3: autoDraw = False
+2.2103 	EXP 	blk7_3: autoDraw = False
+2.2103 	EXP 	blk8_3: autoDraw = False
+2.2103 	EXP 	blk9_3: autoDraw = False
+2.2103 	EXP 	blk3_3: fillColor = [1, 1, 1]
+2.2103 	EXP 	blk1: autoDraw = True
+2.2103 	EXP 	blk2: autoDraw = True
+2.2103 	EXP 	blk3: autoDraw = True
+2.2103 	EXP 	blk4: autoDraw = True
+2.2103 	EXP 	blk5: autoDraw = True
+2.2103 	EXP 	blk6: autoDraw = True
+2.2103 	EXP 	blk7: autoDraw = True
+2.2103 	EXP 	blk8: autoDraw = True
+2.2103 	EXP 	blk9: autoDraw = True
+2.3133 	DATA 	Mouse: Left button down, pos=(631,515)
+2.3435 	EXP 	blk7: fillColor = [1, 0, 0]
+2.3600 	EXP 	blk7: fillColor = [1, 0, 0]
+2.3777 	EXP 	blk7: fillColor = [1, 0, 0]
+2.3942 	EXP 	blk7: fillColor = [1, 0, 0]
+2.4102 	EXP 	blk7: fillColor = [1, 0, 0]
+2.4135 	DATA 	Mouse:  Left button up, pos=(631,515)
+2.4274 	EXP 	blk7: fillColor = [1, 0, 0]
+2.4971 	DATA 	Mouse: Left button down, pos=(631,515)
+2.5276 	EXP 	blk7: fillColor = [1, 0, 0]
+2.5442 	EXP 	blk7: fillColor = [1, 0, 0]
+2.5614 	EXP 	blk7: fillColor = [1, 0, 0]
+2.5768 	EXP 	blk7: fillColor = [1, 0, 0]
+2.5799 	DATA 	Mouse:  Left button up, pos=(631,515)
+2.5944 	EXP 	blk7: fillColor = [1, 0, 0]
+2.9168 	DATA 	Mouse: Left button down, pos=(727,671)
+2.9440 	EXP 	blk9: fillColor = [1, 0, 0]
+2.9440 	EXP 	submit_button: autoDraw = True
+2.9604 	EXP 	blk9: fillColor = [1, 0, 0]
+2.9775 	EXP 	blk9: fillColor = [1, 0, 0]
+2.9945 	EXP 	blk9: fillColor = [1, 0, 0]
+3.0108 	EXP 	blk9: fillColor = [1, 0, 0]
+3.0337 	EXP 	blk9: fillColor = [1, 0, 0]
+3.0510 	EXP 	blk9: fillColor = [1, 0, 0]
+3.0636 	DATA 	Mouse:  Left button up, pos=(727,671)
+3.0669 	EXP 	blk9: fillColor = [1, 0, 0]
+3.3660 	DATA 	Mouse: Left button down, pos=(473,660)
+3.3944 	EXP 	blk5: fillColor = [1, 0, 0]
+3.4109 	EXP 	blk5: fillColor = [1, 0, 0]
+3.4275 	EXP 	blk5: fillColor = [1, 0, 0]
+3.4441 	EXP 	blk5: fillColor = [1, 0, 0]
+3.4610 	EXP 	blk5: fillColor = [1, 0, 0]
+3.4776 	EXP 	blk5: fillColor = [1, 0, 0]
+3.4797 	DATA 	Mouse:  Left button up, pos=(473,660)
+3.4942 	EXP 	blk5: fillColor = [1, 0, 0]
+3.7968 	DATA 	Mouse: Left button down, pos=(740,666)
+3.8277 	EXP 	blk9: fillColor = [1, 0, 0]
+3.8442 	EXP 	blk9: fillColor = [1, 0, 0]
+3.8607 	EXP 	blk9: fillColor = [1, 0, 0]
+3.8776 	EXP 	blk9: fillColor = [1, 0, 0]
+3.8944 	EXP 	blk9: fillColor = [1, 0, 0]
+3.9109 	EXP 	blk9: fillColor = [1, 0, 0]
+3.9277 	EXP 	blk9: fillColor = [1, 0, 0]
+3.9442 	EXP 	blk9: fillColor = [1, 0, 0]
+4.3442 	EXP 	blk2: fillColor = [1, 0, 0]
+4.3608 	EXP 	blk2: fillColor = [1, 0, 0]
+4.3773 	EXP 	blk2: fillColor = [1, 0, 0]
+4.3942 	EXP 	blk2: fillColor = [1, 0, 0]
+4.4109 	EXP 	blk2: fillColor = [1, 0, 0]
+4.4274 	EXP 	blk2: fillColor = [1, 0, 0]
+4.4441 	EXP 	blk2: fillColor = [1, 0, 0]
+4.4603 	EXP 	blk2: fillColor = [1, 0, 0]
+4.4772 	EXP 	blk2: fillColor = [1, 0, 0]
+4.4942 	EXP 	blk2: fillColor = [1, 0, 0]
+4.5111 	EXP 	blk2: fillColor = [1, 0, 0]
+4.5273 	EXP 	blk2: fillColor = [1, 0, 0]
+4.5442 	EXP 	blk2: fillColor = [1, 0, 0]
+4.5610 	EXP 	blk2: fillColor = [1, 0, 0]
+4.5777 	EXP 	blk2: fillColor = [1, 0, 0]
+4.5799 	DATA 	Mouse:  Left button up, pos=(971,533)
+4.5939 	EXP 	blk2: fillColor = [1, 0, 0]
+5.2837 	DATA 	Mouse: Left button down, pos=(1156,75)
+5.3106 	EXP 	blk1: autoDraw = False
+5.3106 	EXP 	blk2: autoDraw = False
+5.3106 	EXP 	blk3: autoDraw = False
+5.3106 	EXP 	blk4: autoDraw = False
+5.3106 	EXP 	blk5: autoDraw = False
+5.3106 	EXP 	blk6: autoDraw = False
+5.3106 	EXP 	blk7: autoDraw = False
+5.3106 	EXP 	blk8: autoDraw = False
+5.3106 	EXP 	blk9: autoDraw = False
+5.3106 	EXP 	submit_button: autoDraw = False
+5.3107 	EXP 	corsi_blocks: status = STOPPED

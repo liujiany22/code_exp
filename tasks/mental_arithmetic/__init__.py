@@ -1,0 +1,1 @@
+"""Mental arithmetic task package."""

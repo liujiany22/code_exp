@@ -1,0 +1,491 @@
+4.2773 	WARNING 	Import Error: No module named 'psychtoolbox'. Using event module for keyboard component.
+4.4337 	EXP 	Created window1 = Window(allowGUI=False, allowStencil=True, autoLog=True, backendConf=UNKNOWN, backgroundFit=<method-wrapper '__getattribute__' of attributeSetter object at 0x13b2a04c0>, backgroundImage=<method-wrapper '__getattribute__' of attributeSetter object at 0x13b2a0460>, bitsMode=UNKNOWN, blendMode='avg', bpc=(8, 8, 8), color=array([0, 0, 0]), colorSpace='rgb', depthBits=8, fullscr=False, gamma=None, gammaErrorPolicy='raise', infoMsg=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x13bcae6e0>, multiSample=False, name='window1', numSamples=2, pos=[np.float64(15.0), np.float64(28.0)], screen=0, size=array([2880, 1800]), stencilBits=8, stereo=False, title='PsychoPy', units='height', useFBO=True, useRetina=True, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType='pyglet')
+4.4337 	EXP 	window1: backgroundImage = ''
+4.4337 	EXP 	window1: backgroundFit = 'none'
+4.4347 	EXP 	digit_span: status = STARTED
+4.4674 	EXP 	Created background = ImageStim(__class__=<class 'psychopy.visual.image.ImageStim'>, anchor=('center', 'center'), autoLog=True, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, draggable=False, flipHoriz=np.False_, flipVert=np.False_, image='assets/background.jpg', interpolate=True, mask=None, maskParams=None, name='background', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([3., 3.]), texRes=128.0, units='height', win=Window(...))
+4.5066 	EXP 	Created instructions = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-1.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=np.float64(0.03), italic=False, languageStyle='LTR', name='instructions', opacity=1, ori=0, pos=array([0., 0.]), rgb=UNKNOWN, text=str(...), units='height', win=Window(...), wrapWidth=1)
+4.5082 	EXP 	Created cont_button_2 = ImageStim(__class__=<class 'psychopy.visual.image.ImageStim'>, anchor=('center', 'center'), autoLog=True, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-2.0, draggable=False, flipHoriz=np.False_, flipVert=np.False_, image='assets/continue.png', interpolate=True, mask=None, maskParams=None, name='cont_button_2', opacity=1, ori=0.0, pos=array([ 0. , -0.4]), size=array([0.3 , 0.07]), texRes=128.0, units='height', win=Window(...))
+4.5104 	EXP 	Created background_2 = ImageStim(__class__=<class 'psychopy.visual.image.ImageStim'>, anchor=('center', 'center'), autoLog=True, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, draggable=False, flipHoriz=np.False_, flipVert=np.False_, image='assets/background.jpg', interpolate=True, mask=None, maskParams=None, name='background_2', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([3., 3.]), texRes=128.0, units='height', win=Window(...))
+4.5116 	EXP 	Created fixation = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-1.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=np.float64(0.1), italic=False, languageStyle='LTR', name='fixation', opacity=1, ori=0, pos=array([0., 0.]), rgb=UNKNOWN, text='+', units='height', win=Window(...), wrapWidth=1)
+4.5118 	EXP 	Created pres_text = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-2.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=0.1, italic=False, languageStyle='LTR', name='pres_text', opacity=1, ori=0, pos=array([0., 0.]), rgb=UNKNOWN, text='', units='height', win=Window(...), wrapWidth=1)
+4.5137 	EXP 	Created background_3 = ImageStim(__class__=<class 'psychopy.visual.image.ImageStim'>, anchor=('center', 'center'), autoLog=True, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, draggable=False, flipHoriz=np.False_, flipVert=np.False_, image='assets/background.jpg', interpolate=True, mask=None, maskParams=None, name='background_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([3., 3.]), texRes=128.0, units='height', win=Window(...))
+4.5159 	EXP 	Created recall_txt = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-1.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=np.float64(0.05), italic=False, languageStyle='LTR', name='recall_txt', opacity=1, ori=0, pos=array([0.  , 0.25]), rgb=UNKNOWN, text='请回忆数字序列', units='height', win=Window(...), wrapWidth=1)
+4.5378 	EXP 	Created cont_button = ImageStim(__class__=<class 'psychopy.visual.image.ImageStim'>, anchor=('center', 'center'), autoLog=True, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-3.0, draggable=False, flipHoriz=np.False_, flipVert=np.False_, image='assets/continue.png', interpolate=True, mask=None, maskParams=None, name='cont_button', opacity=1, ori=0.0, pos=array([ 0. , -0.4]), size=array([0.3 , 0.07]), texRes=128.0, units='height', win=Window(...))
+4.5400 	EXP 	Created background_4 = ImageStim(__class__=<class 'psychopy.visual.image.ImageStim'>, anchor=('center', 'center'), autoLog=True, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, draggable=False, flipHoriz=np.False_, flipVert=np.False_, image='assets/background.jpg', interpolate=True, mask=None, maskParams=None, name='background_4', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([3., 3.]), texRes=128.0, units='height', win=Window(...))
+4.5403 	EXP 	Created feedback_text = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-1.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=0.05, italic=False, languageStyle='LTR', name='feedback_text', opacity=1, ori=0, pos=array([0., 0.]), rgb=UNKNOWN, text='', units='height', win=Window(...), wrapWidth=1)
+4.5423 	EXP 	Created background_5 = ImageStim(__class__=<class 'psychopy.visual.image.ImageStim'>, anchor=('center', 'center'), autoLog=True, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, draggable=False, flipHoriz=np.False_, flipVert=np.False_, image='assets/background.jpg', interpolate=True, mask=None, maskParams=None, name='background_5', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([3., 3.]), texRes=128.0, units='height', win=Window(...))
+4.5426 	EXP 	Created thank_you = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-1.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=0.05, italic=False, languageStyle='LTR', name='thank_you', opacity=1, ori=0, pos=array([0., 0.]), rgb=UNKNOWN, text='', units='height', win=Window(...), wrapWidth=1)
+0.0754 	EXP 	textbox: autoLog = True
+0.0934 	EXP 	background: autoDraw = True
+0.0934 	EXP 	instructions: autoDraw = True
+0.0934 	EXP 	cont_button_2: autoDraw = True
+2.4965 	DATA 	Mouse: Left button down, pos=(835,237)
+2.6295 	DATA 	Mouse:  Left button up, pos=(835,237)
+5.9966 	DATA 	Mouse: Left button down, pos=(775,90)
+6.0116 	EXP 	Imported spreadsheets/choose_digitSpan.xlsx as conditions, 10 conditions, 2 params
+6.0118 	EXP 	New trial (rep=0, index=0): <Trial 0 (0 in rep 0) data={'condition_file': 'three.xlsx', 'level': 3, 'thisN': 0, 'thisTrialN': 0, 'thisRepN': 0}>
+6.0133 	EXP 	Imported spreadsheets/three.xlsx as conditions, 3 conditions, 2 params
+6.0133 	EXP 	New trial (rep=0, index=0): <Trial 0 (0 in rep 0) data={'digitSpan': 3, 'digits': 217, 'thisN': 0, 'thisTrialN': 0, 'thisRepN': 0}>
+6.0134 	EXP 	New trial (rep=0, index=0): <Trial 0 (0 in rep 0) data={'thisN': 0, 'thisTrialN': 0, 'thisRepN': 0}>
+6.0255 	EXP 	background: autoDraw = False
+6.0255 	EXP 	instructions: autoDraw = False
+6.0255 	EXP 	cont_button_2: autoDraw = False
+6.0255 	EXP 	pres_text: height = np.float64(0.1)
+6.0255 	EXP 	pres_text: height = np.float64(0.1)
+6.0255 	EXP 	pres_text: height = np.float64(0.1)
+6.0255 	EXP 	pres_text: text = '2'
+6.0255 	EXP 	background_2: autoDraw = True
+6.0255 	EXP 	fixation: autoDraw = True
+6.1316 	DATA 	Mouse:  Left button up, pos=(775,90)
+6.9464 	DATA 	Mouse: Left button down, pos=(744,452)
+7.0257 	EXP 	fixation: autoDraw = False
+7.0257 	EXP 	pres_text: autoDraw = True
+7.0630 	DATA 	Mouse:  Left button up, pos=(744,452)
+7.9472 	DATA 	Mouse: Left button down, pos=(739,434)
+8.0093 	EXP 	New trial (rep=1, index=0): <Trial 1 (0 in rep 1) data={'thisN': 1, 'thisTrialN': 0, 'thisRepN': 1}>
+8.0259 	EXP 	background_2: autoDraw = False
+8.0259 	EXP 	pres_text: autoDraw = False
+8.0259 	EXP 	background_2: autoDraw = False
+8.0259 	EXP 	fixation: autoDraw = False
+8.0259 	EXP 	pres_text: autoDraw = False
+8.0259 	EXP 	pres_text: height = np.float64(0.1)
+8.0259 	EXP 	pres_text: height = np.float64(0.1)
+8.0259 	EXP 	pres_text: height = np.float64(0.1)
+8.0259 	EXP 	pres_text: text = '1'
+8.0259 	EXP 	background_2: autoDraw = True
+8.0259 	EXP 	fixation: autoDraw = True
+8.0963 	DATA 	Mouse:  Left button up, pos=(739,434)
+8.4132 	DATA 	Mouse: Left button down, pos=(739,434)
+8.5291 	DATA 	Mouse:  Left button up, pos=(739,434)
+8.6121 	DATA 	Mouse: Left button down, pos=(739,434)
+8.7142 	DATA 	Mouse:  Left button up, pos=(739,434)
+8.8050 	DATA 	Mouse: Left button down, pos=(739,434)
+8.9111 	DATA 	Mouse:  Left button up, pos=(739,434)
+8.9822 	DATA 	Mouse: Left button down, pos=(739,434)
+9.0256 	EXP 	fixation: autoDraw = False
+9.0256 	EXP 	pres_text: autoDraw = True
+9.0800 	DATA 	Mouse:  Left button up, pos=(739,434)
+9.9957 	DATA 	Mouse: Left button down, pos=(1011,336)
+10.0089 	EXP 	New trial (rep=2, index=0): <Trial 2 (0 in rep 2) data={'thisN': 2, 'thisTrialN': 0, 'thisRepN': 2}>
+10.0258 	EXP 	background_2: autoDraw = False
+10.0258 	EXP 	pres_text: autoDraw = False
+10.0258 	EXP 	background_2: autoDraw = False
+10.0258 	EXP 	fixation: autoDraw = False
+10.0258 	EXP 	pres_text: autoDraw = False
+10.0258 	EXP 	pres_text: height = np.float64(0.1)
+10.0258 	EXP 	pres_text: height = np.float64(0.1)
+10.0258 	EXP 	pres_text: height = np.float64(0.1)
+10.0258 	EXP 	pres_text: text = '7'
+10.0258 	EXP 	background_2: autoDraw = True
+10.0258 	EXP 	fixation: autoDraw = True
+10.1453 	DATA 	Mouse:  Left button up, pos=(1011,336)
+10.2301 	DATA 	Mouse: Left button down, pos=(1011,336)
+10.3129 	DATA 	Mouse:  Left button up, pos=(1011,336)
+11.0257 	EXP 	fixation: autoDraw = False
+11.0257 	EXP 	pres_text: autoDraw = True
+11.0942 	DATA 	Keypress: escape
+11.1042 	EXP 	Device response: <KeyPress from None: t=11.2047003749758, value=['escape', 15.63682270841673], duration=None>
+11.4398 	DATA 	Keypress: escape
+11.4428 	EXP 	Device response: <KeyPress from None: t=11.550575958332047, value=['escape', 15.982407000032254], duration=None>
+12.0257 	EXP 	background_2: autoDraw = False
+12.0257 	EXP 	pres_text: autoDraw = False
+12.0257 	EXP 	background_2: autoDraw = False
+12.0257 	EXP 	fixation: autoDraw = False
+12.0257 	EXP 	pres_text: autoDraw = False
+12.0257 	EXP 	background_3: autoDraw = True
+12.0257 	EXP 	recall_txt: autoDraw = True
+12.0257 	EXP 	textbox: autoDraw = True
+12.0257 	EXP 	cont_button: autoDraw = True
+12.2116 	DATA 	Mouse: Left button down, pos=(848,265)
+12.3124 	DATA 	Mouse:  Left button up, pos=(848,265)
+13.6660 	DATA 	Keypress: return
+13.6762 	EXP 	Device response: <KeyPress from None: t=13.783917791675776, value=['return', 18.20861854183022], duration=None>
+14.2859 	DATA 	Keypress: return
+14.2930 	EXP 	Device response: <KeyPress from None: t=14.400739666656591, value=['return', 18.82843904173933], duration=None>
+15.5978 	DATA 	Mouse: Left button down, pos=(701,82)
+15.6255 	EXP 	background_3: autoDraw = False
+15.6255 	EXP 	recall_txt: autoDraw = False
+15.6255 	EXP 	textbox: autoDraw = False
+15.6255 	EXP 	cont_button: autoDraw = False
+15.6255 	EXP 	feedback_text: height = np.float64(0.05)
+15.6255 	EXP 	feedback_text: height = np.float64(0.05)
+15.6255 	EXP 	feedback_text: height = np.float64(0.05)
+15.6255 	EXP 	feedback_text: text = 'Incorrect'
+15.6255 	EXP 	background_4: autoDraw = True
+15.6255 	EXP 	feedback_text: autoDraw = True
+15.7134 	DATA 	Mouse:  Left button up, pos=(701,82)
+16.6089 	EXP 	New trial (rep=0, index=1): <Trial 1 (1 in rep 0) data={'digitSpan': 3, 'digits': 486, 'thisN': 1, 'thisTrialN': 1, 'thisRepN': 0}>
+16.6090 	EXP 	New trial (rep=0, index=0): <Trial 0 (0 in rep 0) data={'thisN': 0, 'thisTrialN': 0, 'thisRepN': 0}>
+16.6251 	EXP 	background_4: autoDraw = False
+16.6251 	EXP 	feedback_text: autoDraw = False
+16.6251 	EXP 	background_4: autoDraw = False
+16.6251 	EXP 	feedback_text: autoDraw = False
+16.6251 	EXP 	pres_text: height = np.float64(0.1)
+16.6251 	EXP 	pres_text: height = np.float64(0.1)
+16.6251 	EXP 	pres_text: height = np.float64(0.1)
+16.6251 	EXP 	pres_text: text = '4'
+16.6251 	EXP 	background_2: autoDraw = True
+16.6251 	EXP 	fixation: autoDraw = True
+17.6260 	EXP 	fixation: autoDraw = False
+17.6260 	EXP 	pres_text: autoDraw = True
+18.6088 	EXP 	New trial (rep=1, index=0): <Trial 1 (0 in rep 1) data={'thisN': 1, 'thisTrialN': 0, 'thisRepN': 1}>
+18.6250 	EXP 	background_2: autoDraw = False
+18.6250 	EXP 	pres_text: autoDraw = False
+18.6250 	EXP 	background_2: autoDraw = False
+18.6250 	EXP 	fixation: autoDraw = False
+18.6250 	EXP 	pres_text: autoDraw = False
+18.6250 	EXP 	pres_text: height = np.float64(0.1)
+18.6250 	EXP 	pres_text: height = np.float64(0.1)
+18.6250 	EXP 	pres_text: height = np.float64(0.1)
+18.6250 	EXP 	pres_text: text = '8'
+18.6250 	EXP 	background_2: autoDraw = True
+18.6250 	EXP 	fixation: autoDraw = True
+19.0297 	DATA 	Mouse: Left button down, pos=(645,404)
+19.1616 	DATA 	Mouse:  Left button up, pos=(645,404)
+19.5295 	DATA 	Mouse: Left button down, pos=(744,412)
+19.6093 	EXP 	pres_text: autoDraw = True
+19.6258 	EXP 	fixation: autoDraw = False
+19.6488 	DATA 	Mouse:  Left button up, pos=(744,412)
+20.6084 	EXP 	pres_text: autoDraw = False
+20.6085 	EXP 	New trial (rep=2, index=0): <Trial 2 (0 in rep 2) data={'thisN': 2, 'thisTrialN': 0, 'thisRepN': 2}>
+20.6256 	EXP 	background_2: autoDraw = False
+20.6256 	EXP 	background_2: autoDraw = False
+20.6256 	EXP 	fixation: autoDraw = False
+20.6256 	EXP 	pres_text: autoDraw = False
+20.6256 	EXP 	pres_text: height = np.float64(0.1)
+20.6256 	EXP 	pres_text: height = np.float64(0.1)
+20.6256 	EXP 	pres_text: height = np.float64(0.1)
+20.6256 	EXP 	pres_text: text = '6'
+20.6256 	EXP 	background_2: autoDraw = True
+20.6256 	EXP 	fixation: autoDraw = True
+21.6091 	EXP 	pres_text: autoDraw = True
+21.6251 	EXP 	fixation: autoDraw = False
+22.6093 	EXP 	pres_text: autoDraw = False
+22.6258 	EXP 	background_2: autoDraw = False
+22.6258 	EXP 	background_2: autoDraw = False
+22.6258 	EXP 	fixation: autoDraw = False
+22.6258 	EXP 	pres_text: autoDraw = False
+22.6258 	EXP 	background_3: autoDraw = True
+22.6258 	EXP 	recall_txt: autoDraw = True
+22.6258 	EXP 	textbox: autoDraw = True
+22.6258 	EXP 	cont_button: autoDraw = True
+96.6676 	DATA 	Keypress: return
+96.6756 	EXP 	Device response: <KeyPress from None: t=96.78332429158036, value=['return', 101.21020725008566], duration=None>
+98.4987 	DATA 	Mouse: Left button down, pos=(712,111)
+98.5089 	EXP 	background_3: autoDraw = False
+98.5089 	EXP 	recall_txt: autoDraw = False
+98.5089 	EXP 	textbox: autoDraw = False
+98.5089 	EXP 	cont_button: autoDraw = False
+98.5089 	EXP 	feedback_text: text = 'Incorrect'
+98.5089 	EXP 	background_4: autoDraw = True
+98.5089 	EXP 	feedback_text: autoDraw = True
+98.5975 	DATA 	Mouse:  Left button up, pos=(712,110)
+99.4926 	EXP 	New trial (rep=0, index=2): <Trial 2 (2 in rep 0) data={'digitSpan': 3, 'digits': 760, 'thisN': 2, 'thisTrialN': 2, 'thisRepN': 0}>
+99.4927 	EXP 	New trial (rep=0, index=0): <Trial 0 (0 in rep 0) data={'thisN': 0, 'thisTrialN': 0, 'thisRepN': 0}>
+99.5090 	EXP 	background_4: autoDraw = False
+99.5090 	EXP 	feedback_text: autoDraw = False
+99.5090 	EXP 	background_4: autoDraw = False
+99.5090 	EXP 	feedback_text: autoDraw = False
+99.5090 	EXP 	pres_text: height = np.float64(0.1)
+99.5090 	EXP 	pres_text: height = np.float64(0.1)
+99.5090 	EXP 	pres_text: height = np.float64(0.1)
+99.5090 	EXP 	pres_text: text = '7'
+99.5090 	EXP 	background_2: autoDraw = True
+99.5090 	EXP 	fixation: autoDraw = True
+100.0299 	DATA 	Mouse: Left button down, pos=(719,101)
+100.1468 	DATA 	Mouse:  Left button up, pos=(719,101)
+100.5092 	EXP 	fixation: autoDraw = False
+100.5092 	EXP 	pres_text: autoDraw = True
+101.4920 	EXP 	New trial (rep=1, index=0): <Trial 1 (0 in rep 1) data={'thisN': 1, 'thisTrialN': 0, 'thisRepN': 1}>
+101.5088 	EXP 	background_2: autoDraw = False
+101.5088 	EXP 	pres_text: autoDraw = False
+101.5088 	EXP 	background_2: autoDraw = False
+101.5088 	EXP 	fixation: autoDraw = False
+101.5088 	EXP 	pres_text: autoDraw = False
+101.5088 	EXP 	pres_text: height = np.float64(0.1)
+101.5088 	EXP 	pres_text: height = np.float64(0.1)
+101.5088 	EXP 	pres_text: height = np.float64(0.1)
+101.5088 	EXP 	pres_text: text = '6'
+101.5088 	EXP 	background_2: autoDraw = True
+101.5088 	EXP 	fixation: autoDraw = True
+102.5091 	EXP 	fixation: autoDraw = False
+102.5091 	EXP 	pres_text: autoDraw = True
+103.4925 	EXP 	New trial (rep=2, index=0): <Trial 2 (0 in rep 2) data={'thisN': 2, 'thisTrialN': 0, 'thisRepN': 2}>
+103.5082 	EXP 	background_2: autoDraw = False
+103.5082 	EXP 	pres_text: autoDraw = False
+103.5082 	EXP 	background_2: autoDraw = False
+103.5082 	EXP 	fixation: autoDraw = False
+103.5082 	EXP 	pres_text: autoDraw = False
+103.5082 	EXP 	pres_text: height = np.float64(0.1)
+103.5082 	EXP 	pres_text: height = np.float64(0.1)
+103.5082 	EXP 	pres_text: height = np.float64(0.1)
+103.5082 	EXP 	pres_text: text = '0'
+103.5082 	EXP 	background_2: autoDraw = True
+103.5082 	EXP 	fixation: autoDraw = True
+104.5091 	EXP 	fixation: autoDraw = False
+104.5091 	EXP 	pres_text: autoDraw = True
+105.5085 	EXP 	background_2: autoDraw = False
+105.5085 	EXP 	pres_text: autoDraw = False
+105.5085 	EXP 	background_2: autoDraw = False
+105.5085 	EXP 	fixation: autoDraw = False
+105.5085 	EXP 	pres_text: autoDraw = False
+105.5085 	EXP 	background_3: autoDraw = True
+105.5085 	EXP 	recall_txt: autoDraw = True
+105.5085 	EXP 	textbox: autoDraw = True
+105.5085 	EXP 	cont_button: autoDraw = True
+110.3712 	DATA 	Keypress: l
+110.3952 	DATA 	Keypress: k
+110.3983 	EXP 	Device response: <KeyPress from None: t=110.50601166661363, value=['l', 114.91373016685247], duration=None>
+110.5774 	DATA 	Keypress: return
+110.5799 	EXP 	Device response: <KeyPress from None: t=110.68754620838445, value=['return', 115.11997537501156], duration=None>
+110.7658 	DATA 	Keypress: return
+110.7752 	EXP 	Device response: <KeyPress from None: t=110.8829067084007, value=['return', 115.30836091679521], duration=None>
+110.9282 	DATA 	Keypress: return
+110.9309 	EXP 	Device response: <KeyPress from None: t=111.03866787499283, value=['return', 115.47075970843434], duration=None>
+111.0856 	DATA 	Keypress: return
+111.0920 	EXP 	Device response: <KeyPress from None: t=111.19980770838447, value=['return', 115.62815270840656], duration=None>
+112.3970 	DATA 	Mouse: Left button down, pos=(720,91)
+112.4086 	EXP 	background_3: autoDraw = False
+112.4086 	EXP 	recall_txt: autoDraw = False
+112.4086 	EXP 	textbox: autoDraw = False
+112.4086 	EXP 	cont_button: autoDraw = False
+112.4086 	EXP 	feedback_text: text = 'Incorrect'
+112.4086 	EXP 	background_4: autoDraw = True
+112.4086 	EXP 	feedback_text: autoDraw = True
+112.5301 	DATA 	Mouse:  Left button up, pos=(720,91)
+113.4082 	EXP 	background_4: autoDraw = False
+113.4082 	EXP 	feedback_text: autoDraw = False
+113.4082 	EXP 	background_4: autoDraw = False
+113.4082 	EXP 	feedback_text: autoDraw = False
+113.4082 	EXP 	thank_you: height = np.float64(0.05)
+113.4082 	EXP 	thank_you: height = np.float64(0.05)
+113.4082 	EXP 	thank_you: height = np.float64(0.05)
+113.4082 	EXP 	thank_you: text = '你所能记住的最长数字序列为2'
+113.4082 	EXP 	background_5: autoDraw = True
+113.4082 	EXP 	thank_you: autoDraw = True
+113.9077 	DATA 	Mouse: Left button down, pos=(724,141)
+114.0164 	DATA 	Mouse:  Left button up, pos=(724,140)
+114.1623 	DATA 	Mouse: Left button down, pos=(724,140)
+114.2617 	DATA 	Mouse:  Left button up, pos=(724,140)
+114.3624 	DATA 	Mouse: Left button down, pos=(724,140)
+114.4290 	DATA 	Mouse:  Left button up, pos=(724,140)
+118.4088 	EXP 	background_5: autoDraw = False
+118.4088 	EXP 	thank_you: autoDraw = False
+118.4088 	EXP 	background_5: autoDraw = False
+118.4088 	EXP 	thank_you: autoDraw = False
+118.4088 	EXP 	digit_span: status = STOPPED
+118.4249 	EXP 	digit_span: status = STOPPED
+118.4611 	EXP 	Running in pilot mode.
+118.4612 	EXP 	corsi_blocks: status = NOT_STARTED
+118.5165 	EXP 	Created window1 = Window(allowGUI=False, allowStencil=True, autoLog=True, backendConf=UNKNOWN, backgroundFit=<method-wrapper '__getattribute__' of attributeSetter object at 0x13b2a04c0>, backgroundImage=<method-wrapper '__getattribute__' of attributeSetter object at 0x13b2a0460>, bitsMode=UNKNOWN, blendMode='avg', bpc=(8, 8, 8), color=array([-1, -1, -1]), colorSpace='rgb', depthBits=8, fullscr=False, gamma=None, gammaErrorPolicy='raise', infoMsg=UNKNOWN, lms=UNKNOWN, monitor=<psychopy.monitors.calibTools.Monitor object at 0x14bcffe80>, multiSample=False, name='window1', numSamples=2, pos=[np.float64(15.0), np.float64(28.0)], screen=0, size=array([2880, 1800]), stencilBits=8, stereo=False, title='PsychoPy', units='height', useFBO=True, useRetina=True, viewOri=0.0, viewPos=None, viewScale=None, waitBlanking=True, winType='pyglet')
+118.5165 	EXP 	window1: backgroundImage = ''
+118.5166 	EXP 	window1: backgroundFit = 'none'
+118.5169 	EXP 	corsi_blocks: status = STARTED
+118.5599 	EXP 	Created text = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=np.float64(0.05), italic=False, languageStyle='LTR', name='text', opacity=1, ori=0.0, pos=array([0., 0.]), rgb=UNKNOWN, text=str(...), units='height', win=Window(...), wrapWidth=1)
+118.5610 	EXP 	Created blank = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=np.float64(0.2), italic=False, languageStyle='LTR', name='blank', opacity=1, ori=0, pos=array([0., 0.]), rgb=UNKNOWN, text='+', units='height', win=Window(...), wrapWidth=1)
+118.5613 	EXP 	Created blk1_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-1.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk1_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5616 	EXP 	Created blk2_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-2.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk2_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5618 	EXP 	Created blk3_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-3.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk3_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5620 	EXP 	Created blk4_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-4.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk4_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5623 	EXP 	Created blk5_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-5.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk5_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5625 	EXP 	Created blk6_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-6.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk6_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5630 	EXP 	Created blk7_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-7.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk7_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5633 	EXP 	Created blk8_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-8.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk8_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5635 	EXP 	Created blk9_3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-9.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk9_3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5638 	EXP 	Created blk1 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=0.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk1', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5640 	EXP 	Created blk2 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-1.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk2', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5642 	EXP 	Created blk3 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-2.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk3', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5645 	EXP 	Created blk4 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-3.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk4', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5647 	EXP 	Created blk5 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-4.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk5', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5649 	EXP 	Created blk6 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-5.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk6', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5652 	EXP 	Created blk7 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-6.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk7', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5654 	EXP 	Created blk8 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-7.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk8', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5656 	EXP 	Created blk9 = Rect(__class__=<class 'psychopy.visual.rect.Rect'>, anchor=('center', 'center'), autoDraw=False, autoLog=True, closeShape=True, color=method-wrapper(...), colorSpace='rgb', contrast=None, depth=-8.0, draggable=False, fillColor=array([1, 1, 1]), fillColorSpace='rgb', fillRGB=array([1, 1, 1]), interpolate=True, lineColor=array([1., 1., 1.]), lineColorSpace='rgb', lineRGB=array([1, 1, 1]), lineWidth=1, name='blk9', opacity=1, ori=0.0, pos=array([0., 0.]), size=array([0.1, 0.1]), units='height', vertices=ndarray(...), win=Window(...))
+118.5813 	EXP 	Created fbtxt = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=-1.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=0.05, italic=False, languageStyle='LTR', name='fbtxt', opacity=1, ori=0.0, pos=array([0., 0.]), rgb=UNKNOWN, text='', units='height', win=Window(...), wrapWidth=1)
+118.5815 	EXP 	Created text_2 = TextStim(__class__=<class 'psychopy.visual.text.TextStim'>, alignHoriz=method-wrapper(...), alignText='center', alignVert=method-wrapper(...), anchorHoriz='center', anchorVert='center', antialias=True, autoDraw=False, autoLog=True, bold=False, color=array([1., 1., 1.]), colorSpace='rgb', contrast=1.0, depth=0.0, draggable=False, flipHoriz=False, flipVert=False, font='Arial', fontFiles=[], height=0.05, italic=False, languageStyle='LTR', name='text_2', opacity=1, ori=0.0, pos=array([0., 0.]), rgb=UNKNOWN, text='', units='height', win=Window(...), wrapWidth=1)
+0.0272 	EXP 	submit_button: autoLog = True
+0.0432 	EXP 	text: autoDraw = True
+0.1635 	DATA 	Mouse: Left button down, pos=(832,273)
+0.1808 	EXP 	New trial (rep=0, index=0): <Trial 0 (0 in rep 0) data={'thisN': 0, 'thisTrialN': 0, 'thisRepN': 0}>
+0.1932 	EXP 	text: autoDraw = False
+0.1932 	EXP 	blk1_3: foreColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk1_3: borderColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk1_3: fillColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk1: foreColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk1: borderColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk1: fillColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk2_3: foreColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk2_3: borderColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk2_3: fillColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk2: foreColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk2: borderColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk2: fillColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk3_3: foreColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk3_3: borderColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk3_3: fillColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk3: foreColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk3: borderColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blk3: fillColor = <psychopy.colors.Color: white, alpha=1.0>
+0.1932 	EXP 	blank: autoDraw = True
+0.2635 	DATA 	Mouse:  Left button up, pos=(832,273)
+0.4969 	DATA 	Mouse: Left button down, pos=(832,273)
+0.5910 	DATA 	Mouse:  Left button up, pos=(832,273)
+0.6708 	DATA 	Mouse: Left button down, pos=(832,273)
+0.6854 	EXP 	New trial (rep=0, index=0): <Trial 0 (0 in rep 0) data={'thisN': 0, 'thisTrialN': 0, 'thisRepN': 0}>
+0.7101 	EXP 	blank: autoDraw = False
+0.7101 	EXP 	blk1_3: fillColor = [1, 0, 0]
+0.7101 	EXP 	blk1_3: autoDraw = True
+0.7101 	EXP 	blk2_3: autoDraw = True
+0.7101 	EXP 	blk3_3: autoDraw = True
+0.7101 	EXP 	blk4_3: autoDraw = True
+0.7101 	EXP 	blk5_3: autoDraw = True
+0.7101 	EXP 	blk6_3: autoDraw = True
+0.7101 	EXP 	blk7_3: autoDraw = True
+0.7101 	EXP 	blk8_3: autoDraw = True
+0.7101 	EXP 	blk9_3: autoDraw = True
+0.7799 	DATA 	Mouse:  Left button up, pos=(832,273)
+0.8800 	DATA 	Mouse: Left button down, pos=(832,273)
+0.9801 	DATA 	Mouse:  Left button up, pos=(832,273)
+1.0634 	DATA 	Mouse: Left button down, pos=(832,280)
+1.1468 	DATA 	Mouse:  Left button up, pos=(832,280)
+1.1936 	EXP 	New trial (rep=1, index=0): <Trial 1 (0 in rep 1) data={'thisN': 1, 'thisTrialN': 0, 'thisRepN': 1}>
+1.2101 	EXP 	blk1_3: autoDraw = False
+1.2101 	EXP 	blk2_3: autoDraw = False
+1.2101 	EXP 	blk3_3: autoDraw = False
+1.2101 	EXP 	blk4_3: autoDraw = False
+1.2101 	EXP 	blk5_3: autoDraw = False
+1.2101 	EXP 	blk6_3: autoDraw = False
+1.2101 	EXP 	blk7_3: autoDraw = False
+1.2101 	EXP 	blk8_3: autoDraw = False
+1.2101 	EXP 	blk9_3: autoDraw = False
+1.2101 	EXP 	blk1_3: fillColor = [1, 1, 1]
+1.2101 	EXP 	blk2_3: fillColor = [1, 0, 0]
+1.2101 	EXP 	blk1_3: autoDraw = True
+1.2101 	EXP 	blk2_3: autoDraw = True
+1.2101 	EXP 	blk3_3: autoDraw = True
+1.2101 	EXP 	blk4_3: autoDraw = True
+1.2101 	EXP 	blk5_3: autoDraw = True
+1.2101 	EXP 	blk6_3: autoDraw = True
+1.2101 	EXP 	blk7_3: autoDraw = True
+1.2101 	EXP 	blk8_3: autoDraw = True
+1.2101 	EXP 	blk9_3: autoDraw = True
+1.5682 	DATA 	Mouse: Left button down, pos=(631,517)
+1.6800 	DATA 	Mouse:  Left button up, pos=(631,518)
+1.6933 	EXP 	New trial (rep=2, index=0): <Trial 2 (0 in rep 2) data={'thisN': 2, 'thisTrialN': 0, 'thisRepN': 2}>
+1.7101 	EXP 	blk1_3: autoDraw = False
+1.7101 	EXP 	blk2_3: autoDraw = False
+1.7101 	EXP 	blk3_3: autoDraw = False
+1.7101 	EXP 	blk4_3: autoDraw = False
+1.7101 	EXP 	blk5_3: autoDraw = False
+1.7101 	EXP 	blk6_3: autoDraw = False
+1.7101 	EXP 	blk7_3: autoDraw = False
+1.7101 	EXP 	blk8_3: autoDraw = False
+1.7101 	EXP 	blk9_3: autoDraw = False
+1.7101 	EXP 	blk2_3: fillColor = [1, 1, 1]
+1.7101 	EXP 	blk3_3: fillColor = [1, 0, 0]
+1.7101 	EXP 	blk1_3: autoDraw = True
+1.7101 	EXP 	blk2_3: autoDraw = True
+1.7101 	EXP 	blk3_3: autoDraw = True
+1.7101 	EXP 	blk4_3: autoDraw = True
+1.7101 	EXP 	blk5_3: autoDraw = True
+1.7101 	EXP 	blk6_3: autoDraw = True
+1.7101 	EXP 	blk7_3: autoDraw = True
+1.7101 	EXP 	blk8_3: autoDraw = True
+1.7101 	EXP 	blk9_3: autoDraw = True
+1.8134 	DATA 	Mouse: Left button down, pos=(631,518)
+1.9135 	DATA 	Mouse:  Left button up, pos=(631,518)
+2.0468 	DATA 	Mouse: Left button down, pos=(631,515)
+2.1468 	DATA 	Mouse:  Left button up, pos=(631,515)
+2.2103 	EXP 	blk1_3: autoDraw = False
+2.2103 	EXP 	blk2_3: autoDraw = False
+2.2103 	EXP 	blk3_3: autoDraw = False
+2.2103 	EXP 	blk4_3: autoDraw = False
+2.2103 	EXP 	blk5_3: autoDraw = False
+2.2103 	EXP 	blk6_3: autoDraw = False
+2.2103 	EXP 	blk7_3: autoDraw = False
+2.2103 	EXP 	blk8_3: autoDraw = False
+2.2103 	EXP 	blk9_3: autoDraw = False
+2.2103 	EXP 	blk3_3: fillColor = [1, 1, 1]
+2.2103 	EXP 	blk1: autoDraw = True
+2.2103 	EXP 	blk2: autoDraw = True
+2.2103 	EXP 	blk3: autoDraw = True
+2.2103 	EXP 	blk4: autoDraw = True
+2.2103 	EXP 	blk5: autoDraw = True
+2.2103 	EXP 	blk6: autoDraw = True
+2.2103 	EXP 	blk7: autoDraw = True
+2.2103 	EXP 	blk8: autoDraw = True
+2.2103 	EXP 	blk9: autoDraw = True
+2.3133 	DATA 	Mouse: Left button down, pos=(631,515)
+2.3435 	EXP 	blk7: fillColor = [1, 0, 0]
+2.3600 	EXP 	blk7: fillColor = [1, 0, 0]
+2.3777 	EXP 	blk7: fillColor = [1, 0, 0]
+2.3942 	EXP 	blk7: fillColor = [1, 0, 0]
+2.4102 	EXP 	blk7: fillColor = [1, 0, 0]
+2.4135 	DATA 	Mouse:  Left button up, pos=(631,515)
+2.4274 	EXP 	blk7: fillColor = [1, 0, 0]
+2.4971 	DATA 	Mouse: Left button down, pos=(631,515)
+2.5276 	EXP 	blk7: fillColor = [1, 0, 0]
+2.5442 	EXP 	blk7: fillColor = [1, 0, 0]
+2.5614 	EXP 	blk7: fillColor = [1, 0, 0]
+2.5768 	EXP 	blk7: fillColor = [1, 0, 0]
+2.5799 	DATA 	Mouse:  Left button up, pos=(631,515)
+2.5944 	EXP 	blk7: fillColor = [1, 0, 0]
+2.9168 	DATA 	Mouse: Left button down, pos=(727,671)
+2.9440 	EXP 	blk9: fillColor = [1, 0, 0]
+2.9440 	EXP 	submit_button: autoDraw = True
+2.9604 	EXP 	blk9: fillColor = [1, 0, 0]
+2.9775 	EXP 	blk9: fillColor = [1, 0, 0]
+2.9945 	EXP 	blk9: fillColor = [1, 0, 0]
+3.0108 	EXP 	blk9: fillColor = [1, 0, 0]
+3.0337 	EXP 	blk9: fillColor = [1, 0, 0]
+3.0510 	EXP 	blk9: fillColor = [1, 0, 0]
+3.0636 	DATA 	Mouse:  Left button up, pos=(727,671)
+3.0669 	EXP 	blk9: fillColor = [1, 0, 0]
+3.3660 	DATA 	Mouse: Left button down, pos=(473,660)
+3.3944 	EXP 	blk5: fillColor = [1, 0, 0]
+3.4109 	EXP 	blk5: fillColor = [1, 0, 0]
+3.4275 	EXP 	blk5: fillColor = [1, 0, 0]
+3.4441 	EXP 	blk5: fillColor = [1, 0, 0]
+3.4610 	EXP 	blk5: fillColor = [1, 0, 0]
+3.4776 	EXP 	blk5: fillColor = [1, 0, 0]
+3.4797 	DATA 	Mouse:  Left button up, pos=(473,660)
+3.4942 	EXP 	blk5: fillColor = [1, 0, 0]
+3.7968 	DATA 	Mouse: Left button down, pos=(740,666)
+3.8277 	EXP 	blk9: fillColor = [1, 0, 0]
+3.8442 	EXP 	blk9: fillColor = [1, 0, 0]
+3.8607 	EXP 	blk9: fillColor = [1, 0, 0]
+3.8776 	EXP 	blk9: fillColor = [1, 0, 0]
+3.8944 	EXP 	blk9: fillColor = [1, 0, 0]
+3.9109 	EXP 	blk9: fillColor = [1, 0, 0]
+3.9277 	EXP 	blk9: fillColor = [1, 0, 0]
+3.9442 	EXP 	blk9: fillColor = [1, 0, 0]
+4.3442 	EXP 	blk2: fillColor = [1, 0, 0]
+4.3608 	EXP 	blk2: fillColor = [1, 0, 0]
+4.3773 	EXP 	blk2: fillColor = [1, 0, 0]
+4.3942 	EXP 	blk2: fillColor = [1, 0, 0]
+4.4109 	EXP 	blk2: fillColor = [1, 0, 0]
+4.4274 	EXP 	blk2: fillColor = [1, 0, 0]
+4.4441 	EXP 	blk2: fillColor = [1, 0, 0]
+4.4603 	EXP 	blk2: fillColor = [1, 0, 0]
+4.4772 	EXP 	blk2: fillColor = [1, 0, 0]
+4.4942 	EXP 	blk2: fillColor = [1, 0, 0]
+4.5111 	EXP 	blk2: fillColor = [1, 0, 0]
+4.5273 	EXP 	blk2: fillColor = [1, 0, 0]
+4.5442 	EXP 	blk2: fillColor = [1, 0, 0]
+4.5610 	EXP 	blk2: fillColor = [1, 0, 0]
+4.5777 	EXP 	blk2: fillColor = [1, 0, 0]
+4.5799 	DATA 	Mouse:  Left button up, pos=(971,533)
+4.5939 	EXP 	blk2: fillColor = [1, 0, 0]
+5.2837 	DATA 	Mouse: Left button down, pos=(1156,75)
+5.3106 	EXP 	blk1: autoDraw = False
+5.3106 	EXP 	blk2: autoDraw = False
+5.3106 	EXP 	blk3: autoDraw = False
+5.3106 	EXP 	blk4: autoDraw = False
+5.3106 	EXP 	blk5: autoDraw = False
+5.3106 	EXP 	blk6: autoDraw = False
+5.3106 	EXP 	blk7: autoDraw = False
+5.3106 	EXP 	blk8: autoDraw = False
+5.3106 	EXP 	blk9: autoDraw = False
+5.3106 	EXP 	submit_button: autoDraw = False
+5.3107 	EXP 	corsi_blocks: status = STOPPED

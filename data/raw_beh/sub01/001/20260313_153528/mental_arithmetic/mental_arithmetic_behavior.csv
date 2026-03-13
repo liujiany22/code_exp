@@ -1,0 +1,2 @@
+trial_id,minuend,subtrahend,fixation_seconds,prompt_seconds,calculation_seconds,response_timeout_seconds,response_text,response_rt,response_value,difference_from_minuend,estimated_operations,is_exact_multiple,is_non_negative,notes
+MA01,3141,42,2.0,6.0,240.0,30.0,,,,,,,,PhysioNet paper example style
