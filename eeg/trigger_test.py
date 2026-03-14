@@ -16,6 +16,7 @@ from config.settings import (
     EYELINK_HOST_IP,
     EYELINK_INITIALIZE_CONTEXT,
     EYELINK_MESSAGE_PREFIX,
+    EYELINK_PYLINK_PATH,
     EYELINK_SCREEN_HEIGHT,
     EYELINK_SCREEN_WIDTH,
     TRIGGER_BAUDRATE,
@@ -46,6 +47,7 @@ def main() -> None:
             else EyeLinkTriggerSettings(
                 host_ip=EYELINK_HOST_IP,
                 dummy_mode=EYELINK_DUMMY_MODE,
+                pylink_path=EYELINK_PYLINK_PATH,
                 screen_width=EYELINK_SCREEN_WIDTH,
                 screen_height=EYELINK_SCREEN_HEIGHT,
                 initialize_context=EYELINK_INITIALIZE_CONTEXT,

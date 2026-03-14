@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
+from pathlib import Path
+import sys
 from time import monotonic, sleep
 from typing import Optional
 
@@ -148,6 +151,7 @@ class EyeLinkTriggerSettings:
     initialize_context: bool = False
     calibration_type: str | None = "HV9"
     message_prefix: str = "TRIGGER"
+    pylink_path: str = ""
     label: str = "eyelink"
 
 
@@ -158,11 +162,15 @@ class EyeLinkTriggerBackend(BaseTriggerBackend):
 
     def connect(self) -> None:
         try:
-            import pylink  # type: ignore
+            pylink = self._import_pylink()
         except ModuleNotFoundError as exc:
             raise RuntimeError(
                 "PyLink is required for EyeLink trigger mode. "
-                "Install the EyeLink Developers Kit / PyLink on the acquisition machine."
+                "Install the EyeLink Developers Kit / PyLink on the acquisition machine. "
+                f"Current Python: {sys.executable}. "
+                "If PyLink is installed outside this Python environment, set "
+                "EYELINK_PYLINK_PATH in config/local_settings.py to the folder "
+                "containing the pylink module."
             ) from exc
 
         self._tracker = (
@@ -217,6 +225,28 @@ class EyeLinkTriggerBackend(BaseTriggerBackend):
             parts.append(name)
         parts.append(f"code={code}")
         return " ".join(parts)
+
+    def _import_pylink(self):
+        for path in self._iter_pylink_paths():
+            path_str = str(path)
+            if path_str not in sys.path:
+                sys.path.insert(0, path_str)
+        import pylink  # type: ignore
+
+        return pylink
+
+    def _iter_pylink_paths(self) -> list[Path]:
+        raw = self.settings.pylink_path.strip()
+        if not raw:
+            return []
+
+        candidates: list[Path] = []
+        for chunk in raw.split(os.pathsep):
+            value = chunk.strip().strip('"')
+            if not value:
+                continue
+            candidates.append(Path(value))
+        return candidates
 
 
 class BroadcastTriggerBackend(BaseTriggerBackend):
