@@ -75,9 +75,16 @@ TRIGGER_SERIAL_TERMINATOR = _bytes_from_env_or_local(
     b"",
 )
 EYELINK_ENABLED = _bool_from_env_or_local("EYELINK_ENABLED", False)
+EYELINK_BACKEND = _str_from_env_or_local("EYELINK_BACKEND", "direct")
 EYELINK_HOST_IP = _str_from_env_or_local("EYELINK_HOST_IP", "100.1.1.1")
 EYELINK_DUMMY_MODE = _bool_from_env_or_local("EYELINK_DUMMY_MODE", False)
 EYELINK_PYLINK_PATH = _str_from_env_or_local("EYELINK_PYLINK_PATH", "")
+EYELINK_RELAY_HOST = _str_from_env_or_local("EYELINK_RELAY_HOST", "127.0.0.1")
+EYELINK_RELAY_PORT = _int_from_env_or_local("EYELINK_RELAY_PORT", 18765)
+EYELINK_RELAY_TIMEOUT_SECONDS = _float_from_env_or_local(
+    "EYELINK_RELAY_TIMEOUT_SECONDS",
+    3.0,
+)
 EYELINK_SCREEN_WIDTH = _int_from_env_or_local("EYELINK_SCREEN_WIDTH", 1920)
 EYELINK_SCREEN_HEIGHT = _int_from_env_or_local("EYELINK_SCREEN_HEIGHT", 1080)
 EYELINK_INITIALIZE_CONTEXT = _bool_from_env_or_local(

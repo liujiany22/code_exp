@@ -25,6 +25,7 @@ Starter framework for the cognitive load experiment program.
 - `dummy` mode is the default and is safe before the EEG hardware link is ready.
 - The trigger layer can now broadcast the same event to EEG and optional EyeLink message output.
 - The EyeLink path is message-only by default, so calibration and recording can stay under the eye-tracker operator workflow.
+- EyeLink now supports two backends: `direct` and `relay`. Use `relay` when the main experiment must stay on Python 3.10 but PyLink only works in a separate Python 3.9 environment.
 - The resting-state task now uses a PsychoPy guidance interface and defaults to 180s eyes-open plus 180s eyes-closed.
 - The working-memory pretest can wrap the reference `digit span` and `corsi blocks` PsychoPy tasks.
 - The mental arithmetic task is implemented as a Q-value-based arithmetic task with QE/QM/QH random generation.
@@ -39,11 +40,23 @@ python code_exp/launcher.py --task resting_state --auto-advance --eyes-open 3 --
 Default resting-state timing is 180 seconds for eyes open and 180 seconds for eyes closed.
 
 For hardware use, configure `TRIGGER_MODE` / `TRIGGER_PORT` for EEG and set
-`EYELINK_ENABLED=1` if EyeLink message logging should run in parallel. Set
-`EYELINK_INITIALIZE_CONTEXT=1` only if you want this program to also send
-`screen_pixel_coords`, `DISPLAY_COORDS`, and `calibration_type`.
-If `python` cannot import `pylink`, set `EYELINK_PYLINK_PATH` to the folder
-containing the `pylink` module in the SR Research install.
+`EYELINK_ENABLED=1` if EyeLink message logging should run in parallel.
+
+If the main experiment runs on Python 3.10, set `EYELINK_BACKEND="relay"` and
+run the EyeLink relay server in a separate Python 3.9 process:
+
+```bash
+py -3.9 eeg/eyelink_relay_server.py
+```
+
+The main experiment will then talk to `127.0.0.1:18765` by default.
+
+If you instead use `EYELINK_BACKEND="direct"`, the current Python must be able
+to `import pylink`. Set `EYELINK_PYLINK_PATH` only when PyLink lives outside the
+active Python environment.
+
+Set `EYELINK_INITIALIZE_CONTEXT=1` only if you want the EyeLink side to also
+send `screen_pixel_coords`, `DISPLAY_COORDS`, and `calibration_type`.
 
 To avoid setting these in the terminal every time, edit
 `code_exp/config/local_settings.py`. Environment variables still override the

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from config.settings import (
     DEFAULT_SESSION_ID,
+    EYELINK_BACKEND,
     EYELINK_CALIBRATION_TYPE,
     EYELINK_DUMMY_MODE,
     EYELINK_ENABLED,
@@ -13,6 +14,9 @@ from config.settings import (
     EYELINK_INITIALIZE_CONTEXT,
     EYELINK_MESSAGE_PREFIX,
     EYELINK_PYLINK_PATH,
+    EYELINK_RELAY_HOST,
+    EYELINK_RELAY_PORT,
+    EYELINK_RELAY_TIMEOUT_SECONDS,
     EYELINK_SCREEN_HEIGHT,
     EYELINK_SCREEN_WIDTH,
     RAW_BEH_DIR,
@@ -26,6 +30,7 @@ from config.settings import (
     TRIGGER_WRITE_TIMEOUT_SECONDS,
 )
 from eeg.trigger import (
+    EyeLinkRelaySettings,
     EyeLinkTriggerSettings,
     SerialTriggerSettings,
     TriggerClient,
@@ -69,15 +74,24 @@ def build_context(
             eyelink_settings=(
                 None
                 if not EYELINK_ENABLED
-                else EyeLinkTriggerSettings(
-                    host_ip=EYELINK_HOST_IP,
-                    dummy_mode=EYELINK_DUMMY_MODE,
-                    pylink_path=EYELINK_PYLINK_PATH,
-                    screen_width=EYELINK_SCREEN_WIDTH,
-                    screen_height=EYELINK_SCREEN_HEIGHT,
-                    initialize_context=EYELINK_INITIALIZE_CONTEXT,
-                    calibration_type=EYELINK_CALIBRATION_TYPE,
-                    message_prefix=EYELINK_MESSAGE_PREFIX,
+                else (
+                    EyeLinkRelaySettings(
+                        host=EYELINK_RELAY_HOST,
+                        port=EYELINK_RELAY_PORT,
+                        timeout_seconds=EYELINK_RELAY_TIMEOUT_SECONDS,
+                        message_prefix=EYELINK_MESSAGE_PREFIX,
+                    )
+                    if EYELINK_BACKEND == "relay"
+                    else EyeLinkTriggerSettings(
+                        host_ip=EYELINK_HOST_IP,
+                        dummy_mode=EYELINK_DUMMY_MODE,
+                        pylink_path=EYELINK_PYLINK_PATH,
+                        screen_width=EYELINK_SCREEN_WIDTH,
+                        screen_height=EYELINK_SCREEN_HEIGHT,
+                        initialize_context=EYELINK_INITIALIZE_CONTEXT,
+                        calibration_type=EYELINK_CALIBRATION_TYPE,
+                        message_prefix=EYELINK_MESSAGE_PREFIX,
+                    )
                 )
             ),
         ),

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 import os
 from pathlib import Path
+import socket
 import sys
 from time import monotonic, sleep
 from typing import Optional
@@ -155,6 +157,15 @@ class EyeLinkTriggerSettings:
     label: str = "eyelink"
 
 
+@dataclass(frozen=True)
+class EyeLinkRelaySettings:
+    host: str = "127.0.0.1"
+    port: int = 18765
+    timeout_seconds: float = 3.0
+    message_prefix: str = "TRIGGER"
+    label: str = "eyelink-relay"
+
+
 class EyeLinkTriggerBackend(BaseTriggerBackend):
     def __init__(self, settings: EyeLinkTriggerSettings) -> None:
         self.settings = settings
@@ -249,6 +260,85 @@ class EyeLinkTriggerBackend(BaseTriggerBackend):
         return candidates
 
 
+class EyeLinkRelayTriggerBackend(BaseTriggerBackend):
+    def __init__(self, settings: EyeLinkRelaySettings) -> None:
+        self.settings = settings
+        self._socket: socket.socket | None = None
+        self._reader = None
+        self._writer = None
+
+    def connect(self) -> None:
+        self._socket = socket.create_connection(
+            (self.settings.host, self.settings.port),
+            timeout=self.settings.timeout_seconds,
+        )
+        self._reader = self._socket.makefile("r", encoding="utf-8", newline="\n")
+        self._writer = self._socket.makefile("w", encoding="utf-8", newline="\n")
+        response = self._request({"command": "ping"})
+        if response.get("result") != "pong":
+            raise RuntimeError(
+                "EyeLink relay did not respond to ping. "
+                f"Received: {response!r}"
+            )
+        print(
+            f"[{self.settings.label}] trigger backend connected "
+            f"target={self.settings.host}:{self.settings.port} mode=relay"
+        )
+
+    def send_code(self, code: int, name: str | None = None) -> None:
+        message = self._format_message(name=name, code=code)
+        self._request({"command": "message", "message": message})
+
+    def reset(self) -> None:
+        return
+
+    def close(self) -> None:
+        try:
+            if self._writer is not None:
+                self._writer.close()
+            if self._reader is not None:
+                self._reader.close()
+        finally:
+            if self._socket is not None:
+                self._socket.close()
+            self._writer = None
+            self._reader = None
+            self._socket = None
+
+    def _format_message(self, name: str | None, code: int) -> str:
+        parts = [self.settings.message_prefix]
+        if name:
+            parts.append(name)
+        parts.append(f"code={code}")
+        return " ".join(parts)
+
+    def _request(self, payload: dict[str, object]) -> dict[str, object]:
+        writer = self._require_writer()
+        reader = self._require_reader()
+        writer.write(json.dumps(payload) + "\n")
+        writer.flush()
+        response_line = reader.readline()
+        if not response_line:
+            raise RuntimeError("EyeLink relay connection closed unexpectedly.")
+        response = json.loads(response_line)
+        if not response.get("ok", False):
+            raise RuntimeError(
+                "EyeLink relay error: "
+                f"{response.get('error', 'unknown error')}"
+            )
+        return response
+
+    def _require_reader(self):
+        if self._reader is None:
+            raise RuntimeError("EyeLink relay backend is not connected.")
+        return self._reader
+
+    def _require_writer(self):
+        if self._writer is None:
+            raise RuntimeError("EyeLink relay backend is not connected.")
+        return self._writer
+
+
 class BroadcastTriggerBackend(BaseTriggerBackend):
     def __init__(self, backends: list[BaseTriggerBackend]) -> None:
         self.backends = backends
@@ -318,7 +408,7 @@ def get_trigger(
     mode: str = "dummy",
     port: Optional[str] = None,
     serial_settings: SerialTriggerSettings | None = None,
-    eyelink_settings: EyeLinkTriggerSettings | None = None,
+    eyelink_settings: EyeLinkTriggerSettings | EyeLinkRelaySettings | None = None,
 ) -> TriggerClient:
     backends: list[BaseTriggerBackend] = []
 
@@ -335,7 +425,10 @@ def get_trigger(
         raise ValueError(f"Unsupported trigger mode: {mode}")
 
     if eyelink_settings is not None:
-        backends.append(EyeLinkTriggerBackend(eyelink_settings))
+        if isinstance(eyelink_settings, EyeLinkRelaySettings):
+            backends.append(EyeLinkRelayTriggerBackend(eyelink_settings))
+        else:
+            backends.append(EyeLinkTriggerBackend(eyelink_settings))
 
     if len(backends) == 1:
         return TriggerClient(backends[0])
