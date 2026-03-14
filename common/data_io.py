@@ -6,11 +6,30 @@ from pathlib import Path
 
 from config.settings import (
     DEFAULT_SESSION_ID,
+    EYELINK_CALIBRATION_TYPE,
+    EYELINK_DUMMY_MODE,
+    EYELINK_ENABLED,
+    EYELINK_HOST_IP,
+    EYELINK_INITIALIZE_CONTEXT,
+    EYELINK_MESSAGE_PREFIX,
+    EYELINK_SCREEN_HEIGHT,
+    EYELINK_SCREEN_WIDTH,
     RAW_BEH_DIR,
+    TRIGGER_BAUDRATE,
     TRIGGER_MODE,
     TRIGGER_PORT,
+    TRIGGER_RESET_CODE,
+    TRIGGER_SERIAL_ENCODING,
+    TRIGGER_SERIAL_TERMINATOR,
+    TRIGGER_TIMEOUT_SECONDS,
+    TRIGGER_WRITE_TIMEOUT_SECONDS,
 )
-from eeg.trigger import TriggerClient, get_trigger
+from eeg.trigger import (
+    EyeLinkTriggerSettings,
+    SerialTriggerSettings,
+    TriggerClient,
+    get_trigger,
+)
 
 
 @dataclass
@@ -35,5 +54,29 @@ def build_context(
         session_id=session_id,
         run_id=run_id,
         output_dir=output_dir,
-        trigger=get_trigger(TRIGGER_MODE, port=TRIGGER_PORT),
+        trigger=get_trigger(
+            TRIGGER_MODE,
+            port=TRIGGER_PORT,
+            serial_settings=SerialTriggerSettings(
+                baudrate=TRIGGER_BAUDRATE,
+                timeout_seconds=TRIGGER_TIMEOUT_SECONDS,
+                write_timeout_seconds=TRIGGER_WRITE_TIMEOUT_SECONDS,
+                reset_code=TRIGGER_RESET_CODE,
+                encoding=TRIGGER_SERIAL_ENCODING,
+                terminator=TRIGGER_SERIAL_TERMINATOR,
+            ),
+            eyelink_settings=(
+                None
+                if not EYELINK_ENABLED
+                else EyeLinkTriggerSettings(
+                    host_ip=EYELINK_HOST_IP,
+                    dummy_mode=EYELINK_DUMMY_MODE,
+                    screen_width=EYELINK_SCREEN_WIDTH,
+                    screen_height=EYELINK_SCREEN_HEIGHT,
+                    initialize_context=EYELINK_INITIALIZE_CONTEXT,
+                    calibration_type=EYELINK_CALIBRATION_TYPE,
+                    message_prefix=EYELINK_MESSAGE_PREFIX,
+                )
+            ),
+        ),
     )

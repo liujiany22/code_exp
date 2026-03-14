@@ -134,14 +134,11 @@ def main() -> None:
     args = parser.parse_args()
 
     ensure_directories()
-    context = build_context(
-        participant_id=args.participant,
-        session_id=args.session,
-    )
+    context = None
     try:
         if args.list or not args.task:
-            print(f"Participant: {context.participant_id}")
-            print(f"Session: {context.session_id}")
+            print(f"Participant: {args.participant}")
+            print(f"Session: {args.session}")
             print("Task order:")
 
             for index, task in enumerate(TASK_REGISTRY, start=1):
@@ -159,6 +156,11 @@ def main() -> None:
         if not args.task:
             print("Framework ready. Use --task to run a task.")
             return
+
+        context = build_context(
+            participant_id=args.participant,
+            session_id=args.session,
+        )
 
         if args.task == "resting_state":
             config = RestingStateConfig(
@@ -274,7 +276,8 @@ def main() -> None:
         print(f"Task failed: {exc}")
         raise SystemExit(1) from exc
     finally:
-        context.trigger.close()
+        if context is not None:
+            context.trigger.close()
 
 
 if __name__ == "__main__":

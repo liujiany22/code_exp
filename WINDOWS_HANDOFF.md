@@ -54,7 +54,10 @@ integration with `NeusenW32`.
 - `code_exp/eeg/trigger.py`
   - Centralized trigger abstraction.
   - Current mode is `dummy`.
-  - Real `NeusenW32` communication is not implemented yet.
+  - Can broadcast one event to EEG serial trigger output and optional EyeLink message output.
+  - Real `NeusenW32` protocol details still need hardware validation.
+  - EyeLink support is a PyLink-based message-only skeleton by default.
+  - Calibration, validation, drift correction, and recording can remain under the EyeLink operator workflow.
 
 ## Why Move to Windows
 
@@ -155,6 +158,7 @@ python code_exp/launcher.py --task learning_cycle --participant sub01 --session 
 6. After behavior tasks are stable, implement the real trigger backend in:
    - `code_exp/eeg/trigger.py`
    - `code_exp/config/settings.py`
+7. If EyeLink is used, validate the message-only path on Windows and decide whether `EYELINK_INITIALIZE_CONTEXT=1` is needed.
 
 ## Paste-Ready Note For A Windows Agent
 
@@ -173,7 +177,9 @@ Current status:
 - it uses a balanced order over two topics x three load levels
 - questionnaire phases are placeholders and should be replaced later
 - trigger layer is centralized in code_exp/eeg/trigger.py and currently runs in dummy mode
-- real NeusenW32 trigger communication is not implemented yet
+- it can optionally mirror the same events to EyeLink message output
+- its EyeLink path is message-only by default and does not own calibration or EDF lifecycle
+- real NeusenW32 trigger communication still needs hardware validation
 
 Known macOS issues that motivated the move:
 - ioHub startup failed
