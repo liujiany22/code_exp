@@ -40,9 +40,6 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Local machine configuration
-/config/local_settings.py
-
 # PsychoPy runtime outputs
 *.psydat
 *.pickle
