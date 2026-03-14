@@ -425,7 +425,7 @@ class MentalArithmeticTask:
             color=self.config.text_color,
             colorSpace="named",
             height=0.03,
-            pos=(0, -0.30),
+            pos=(0, -0.38),
             wrapWidth=1.4,
         )
         self.input_stim = visual.TextStim(
@@ -435,7 +435,7 @@ class MentalArithmeticTask:
             color=self.config.text_color,
             colorSpace="named",
             height=0.07,
-            pos=(0, -0.08),
+            pos=(0, -0.24),
         )
         self.fixation_stim = visual.TextStim(
             win=self.window,
@@ -506,7 +506,6 @@ class MentalArithmeticTask:
             "你将看到一道加法题，请在心中完成计算。\n"
             "使用键盘输入答案，按回车提交。\n"
             "如果输错，可以按退格删除。\n"
-            "请尽量又快又准地作答。\n"
             "按空格开始。"
         )
 

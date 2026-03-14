@@ -485,7 +485,7 @@ class LearningCycleTask:
             form_file=trial.pretest_form,
             prompt_title="前测知识问卷",
             prompt_body=(
-                "这里预留给你后续接入选择题、判断题或填空题。\n"
+                "这里预留给后续接入选择题、判断题或填空题。\n"
                 "当前版本只负责记录试次、表单引用和阶段完成状态。"
             ),
         )
@@ -500,7 +500,7 @@ class LearningCycleTask:
             form_file=trial.rating_form,
             prompt_title="后测主观量表",
             prompt_body=(
-                "这里预留给你后续接入 NASA-TLX 或简化心理努力量表。\n"
+                "这里预留给后续接入 NASA-TLX 或简化心理努力量表。\n"
                 "当前版本只保留接口和完成确认。"
             ),
         )
@@ -513,7 +513,7 @@ class LearningCycleTask:
             form_file=trial.posttest_form,
             prompt_title="后测表现接口",
             prompt_body=(
-                "这里预留给你后续接入视频后的表现测验或认真作答检查。\n"
+                "这里预留给后续接入视频后的表现测验或认真作答检查。\n"
                 "当前版本只保留接口和完成确认。"
             ),
         )
