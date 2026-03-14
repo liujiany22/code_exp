@@ -43,6 +43,10 @@ For hardware use, configure `TRIGGER_MODE` / `TRIGGER_PORT` for EEG and set
 `EYELINK_INITIALIZE_CONTEXT=1` only if you want this program to also send
 `screen_pixel_coords`, `DISPLAY_COORDS`, and `calibration_type`.
 
+To avoid setting these in the terminal every time, edit
+`code_exp/config/local_settings.py`. Environment variables still override the
+file if both are set.
+
 ## Run working-memory pretest
 
 ```bash

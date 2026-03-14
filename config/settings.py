@@ -3,6 +3,47 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+try:
+    from . import local_settings as _local_settings
+except ImportError:
+    _local_settings = None
+
+
+def _local_value(name: str, default):
+    if _local_settings is None:
+        return default
+    return getattr(_local_settings, name, default)
+
+
+def _bool_from_env_or_local(name: str, default: bool) -> bool:
+    local_default = _local_value(name, default)
+    raw = os.environ.get(name)
+    if raw is None:
+        return bool(local_default)
+    return raw != "0"
+
+
+def _int_from_env_or_local(name: str, default: int) -> int:
+    return int(os.environ.get(name, str(_local_value(name, default))))
+
+
+def _float_from_env_or_local(name: str, default: float) -> float:
+    return float(os.environ.get(name, str(_local_value(name, default))))
+
+
+def _str_from_env_or_local(name: str, default: str) -> str:
+    return os.environ.get(name, str(_local_value(name, default)))
+
+
+def _bytes_from_env_or_local(name: str, default: bytes) -> bytes:
+    raw = os.environ.get(name)
+    if raw is not None:
+        return raw.encode("ascii")
+    local_default = _local_value(name, default)
+    if isinstance(local_default, bytes):
+        return local_default
+    return str(local_default).encode("ascii")
+
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = BASE_DIR / "data"
@@ -19,24 +60,31 @@ DIGIT_SPAN_SCRIPT = DIGIT_SPAN_DIR / "digit_span_lastrun.py"
 CORSI_BLOCKS_DIR = REFERENCE_DIR / "corsi_blocks-master_new"
 CORSI_BLOCKS_SCRIPT = CORSI_BLOCKS_DIR / "corsi_blocks_lastrun.py"
 
-TRIGGER_MODE = os.environ.get("TRIGGER_MODE", "dummy")
-TRIGGER_PORT = os.environ.get("TRIGGER_PORT", "")
-TRIGGER_BAUDRATE = int(os.environ.get("TRIGGER_BAUDRATE", "115200"))
-TRIGGER_TIMEOUT_SECONDS = float(os.environ.get("TRIGGER_TIMEOUT_SECONDS", "1.0"))
-TRIGGER_WRITE_TIMEOUT_SECONDS = float(
-    os.environ.get("TRIGGER_WRITE_TIMEOUT_SECONDS", "1.0")
+TRIGGER_MODE = _str_from_env_or_local("TRIGGER_MODE", "dummy")
+TRIGGER_PORT = _str_from_env_or_local("TRIGGER_PORT", "")
+TRIGGER_BAUDRATE = _int_from_env_or_local("TRIGGER_BAUDRATE", 115200)
+TRIGGER_TIMEOUT_SECONDS = _float_from_env_or_local("TRIGGER_TIMEOUT_SECONDS", 1.0)
+TRIGGER_WRITE_TIMEOUT_SECONDS = _float_from_env_or_local(
+    "TRIGGER_WRITE_TIMEOUT_SECONDS",
+    1.0,
 )
-TRIGGER_RESET_CODE = int(os.environ.get("TRIGGER_RESET_CODE", "0"))
-TRIGGER_SERIAL_ENCODING = os.environ.get("TRIGGER_SERIAL_ENCODING", "byte")
-TRIGGER_SERIAL_TERMINATOR = b""
-EYELINK_ENABLED = os.environ.get("EYELINK_ENABLED", "0") == "1"
-EYELINK_HOST_IP = os.environ.get("EYELINK_HOST_IP", "100.1.1.1")
-EYELINK_DUMMY_MODE = os.environ.get("EYELINK_DUMMY_MODE", "0") == "1"
-EYELINK_SCREEN_WIDTH = int(os.environ.get("EYELINK_SCREEN_WIDTH", "1920"))
-EYELINK_SCREEN_HEIGHT = int(os.environ.get("EYELINK_SCREEN_HEIGHT", "1080"))
-EYELINK_INITIALIZE_CONTEXT = os.environ.get("EYELINK_INITIALIZE_CONTEXT", "0") == "1"
-EYELINK_CALIBRATION_TYPE = os.environ.get("EYELINK_CALIBRATION_TYPE", "HV9")
-EYELINK_MESSAGE_PREFIX = os.environ.get("EYELINK_MESSAGE_PREFIX", "TRIGGER")
+TRIGGER_RESET_CODE = _int_from_env_or_local("TRIGGER_RESET_CODE", 0)
+TRIGGER_SERIAL_ENCODING = _str_from_env_or_local("TRIGGER_SERIAL_ENCODING", "byte")
+TRIGGER_SERIAL_TERMINATOR = _bytes_from_env_or_local(
+    "TRIGGER_SERIAL_TERMINATOR",
+    b"",
+)
+EYELINK_ENABLED = _bool_from_env_or_local("EYELINK_ENABLED", False)
+EYELINK_HOST_IP = _str_from_env_or_local("EYELINK_HOST_IP", "100.1.1.1")
+EYELINK_DUMMY_MODE = _bool_from_env_or_local("EYELINK_DUMMY_MODE", False)
+EYELINK_SCREEN_WIDTH = _int_from_env_or_local("EYELINK_SCREEN_WIDTH", 1920)
+EYELINK_SCREEN_HEIGHT = _int_from_env_or_local("EYELINK_SCREEN_HEIGHT", 1080)
+EYELINK_INITIALIZE_CONTEXT = _bool_from_env_or_local(
+    "EYELINK_INITIALIZE_CONTEXT",
+    False,
+)
+EYELINK_CALIBRATION_TYPE = _str_from_env_or_local("EYELINK_CALIBRATION_TYPE", "HV9")
+EYELINK_MESSAGE_PREFIX = _str_from_env_or_local("EYELINK_MESSAGE_PREFIX", "TRIGGER")
 DEFAULT_TRIGGER_WIDTH_MS = 10
 DEFAULT_SESSION_ID = "001"
 REST_EYES_OPEN_SECONDS = 180

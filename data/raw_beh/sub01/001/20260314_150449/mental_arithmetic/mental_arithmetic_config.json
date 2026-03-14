@@ -1,0 +1,128 @@
+{
+  "config": {
+    "fullscreen": false,
+    "allow_gui": true,
+    "force_mouse_visible": true,
+    "window_size": [
+      1280,
+      800
+    ],
+    "background_color": "black",
+    "text_color": "white",
+    "font": "Arial",
+    "fixation_seconds": 1.0,
+    "inter_trial_seconds": 0.5,
+    "response_timeout_seconds": 15.0,
+    "random_seed": null,
+    "trial_counts": {
+      "QE": 6,
+      "QM": 6,
+      "QH": 6
+    },
+    "difficulty_rule_specs": {
+      "QE": {
+        "min_q": 0.0,
+        "max_q": 2.0,
+        "digit_pairs": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            1
+          ]
+        ]
+      },
+      "QM": {
+        "min_q": 2.0,
+        "max_q": 4.0,
+        "digit_pairs": [
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            1
+          ]
+        ]
+      },
+      "QH": {
+        "min_q": 4.0,
+        "max_q": null,
+        "digit_pairs": [
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            3
+          ]
+        ]
+      }
+    },
+    "auto_advance": false
+  },
+  "difficulty_rules": {
+    "QE": {
+      "min_q": 0.0,
+      "max_q": 2.0,
+      "digit_pairs": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ]
+    },
+    "QM": {
+      "min_q": 2.0,
+      "max_q": 4.0,
+      "digit_pairs": [
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          1
+        ]
+      ]
+    },
+    "QH": {
+      "min_q": 4.0,
+      "max_q": null,
+      "digit_pairs": [
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          3,
+          3
+        ]
+      ]
+    }
+  }
+}
