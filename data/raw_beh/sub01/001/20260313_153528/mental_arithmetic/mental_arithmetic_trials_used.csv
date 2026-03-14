@@ -1,4 +1,0 @@
-trial_id,minuend,subtrahend,fixation_seconds,prompt_seconds,calculation_seconds,response_timeout_seconds,notes
-MA01,3141,42,2.0,6.0,240.0,30.0,PhysioNet paper example style
-MA02,4753,17,2.0,6.0,240.0,30.0,PhysioNet paper example style
-MA03,6824,29,2.0,6.0,240.0,30.0,Additional trial

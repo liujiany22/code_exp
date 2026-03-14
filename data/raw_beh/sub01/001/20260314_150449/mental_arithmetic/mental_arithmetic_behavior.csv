@@ -1,6 +1,0 @@
-TrialNumber,DifficultyLevel,Question,CorrectAnswer,ParticipantAnswer,ResponseTime,QValue,CarryCount,ParticipantCorrect
-1,QE,6 + 9 = ?,15,15,9.149870,1.0,1,1
-2,QE,40 + 5 = ?,45,15,3.233369,1.0,0,0
-3,QH,824 + 364 = ?,1188,23,1.016616,5.0,1,0
-4,QH,576 + 44 = ?,620,34,0.616726,5.0,2,0
-5,QM,29 + 1 = ?,30,56,0.516689,2.0,1,0

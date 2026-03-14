@@ -1,7 +1,0 @@
-trial_id,phase,event_name,event_code,trigger_timestamp,psychopy_time
-task,task,task_start,31,627721.016188,
-task,instruction,instruction_start,32,627721.027277,
-MA01,trial,trial_start,33,627723.886083,
-MA01,fixation,fixation,34,627723.897178,
-MA01,prompt,problem_onset,35,627725.914866,
-MA01,calculation,calculation_start,36,627731.931581,

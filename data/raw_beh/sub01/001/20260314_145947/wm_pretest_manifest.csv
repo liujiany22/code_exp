@@ -1,3 +1,0 @@
-task_name,status,script_path,output_dir
-digit_span,completed,/Users/liujiany/work/CognitiveLoad/code_exp/cognitiveabilitytest/digit_span-master_new/digit_span_lastrun.py,/Users/liujiany/work/CognitiveLoad/code_exp/data/raw_beh/sub01/001/20260314_145947/wm_pretest/digit_span
-corsi_blocks,completed,/Users/liujiany/work/CognitiveLoad/code_exp/cognitiveabilitytest/corsi_blocks-master_new/corsi_blocks_lastrun.py,/Users/liujiany/work/CognitiveLoad/code_exp/data/raw_beh/sub01/001/20260314_145947/wm_pretest/corsi_blocks
