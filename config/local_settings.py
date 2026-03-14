@@ -5,8 +5,8 @@ from __future__ import annotations
 # still take priority over these values when both are present.
 
 # EEG trigger settings
-TRIGGER_MODE = "dummy"
-TRIGGER_PORT = ""
+TRIGGER_MODE = "serial"
+TRIGGER_PORT = "COM3"
 TRIGGER_BAUDRATE = 115200
 TRIGGER_TIMEOUT_SECONDS = 1.0
 TRIGGER_WRITE_TIMEOUT_SECONDS = 1.0
@@ -19,7 +19,7 @@ TRIGGER_SERIAL_TERMINATOR = b""
 # in a separate Python 3.9 environment before running the main experiment.
 # EYELINK_PYLINK_PATH is consumed by the Python 3.9 relay server, not by the
 # main Python 3.10 experiment process.
-EYELINK_ENABLED = True
+EYELINK_ENABLED = False
 EYELINK_BACKEND = "relay"
 EYELINK_HOST_IP = "100.1.1.1"
 EYELINK_DUMMY_MODE = False
