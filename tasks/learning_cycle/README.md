@@ -1,115 +1,68 @@
 # Learning Cycle
 
-This task implements the video-learning loop for the experiment.
+视频学习任务当前按“单组正式材料”运行，正式 protocol 只启用 `fourier_protocol`。
 
-## Current Structure
+## 当前正式结构
 
-The task is fixed to 6 trials. Each trial runs:
+当前正式流程只运行 1 组视频学习材料：
 
-1. pretest knowledge questionnaire
-2. video playback
-3. post-video subjective rating
-4. post-video performance-check
+1. 前测
+2. 视频播放
+3. 后测
 
-The current version already handles:
+其中：
 
-- trial ordering
-- video start/end EEG trigger emission through the centralized trigger layer
-- placeholder questionnaire interfaces for forms that are not implemented yet
-- real CSV-driven true/false questionnaires for implemented forms
-- pretest/posttest recall prompts after the judgement section
-- trial log and event log writing
+- 前测 = 先口头复述，再完成 10 道判断题
+- 后测 = 先口头复述，再完成 10 道判断题
+- 判断题按键为 `F = 对`、`J = 错`
+- 判断题时序为：陈述 `4s` + 作答 `4s` + 间隔 `1s`
 
-## Trial Design
+## 视频播放
 
-The default condition table is:
+- 视频文件从 `code_exp/stimuli/videos/` 读取
+- 当前正式材料文件名为 `fourier_protocol.mp4`
+- 播放前会在临时缓存目录中按 `3 分钟`切分视频片段
+- 每段播放结束后都会插入一个 `1-5` 评分条
+- 最后一段播放结束后也会再出现一次 `1-5` 评分条
 
-- [learning_cycle_trials.csv](/Users/liujiany/work/CognitiveLoad/code_exp/stimuli/conditions/learning_cycle_trials.csv)
+评分支持两种输入方式：
 
-It expects 6 rows:
+- 鼠标点击 `1-5`
+- 键盘数字 `1-5`
 
-- 2 topics
-- each topic has one `low`, one `medium`, and one `high` load video
+## 当前题表与问卷
 
-Default topics in the template:
+正式 protocol 条件表：
 
-- `傅立叶变换`
-- `统计基础`
+- [learning_cycle_trials_protocol.csv](/Users/liujiany/work/CognitiveLoad/code_exp/stimuli/conditions/learning_cycle_trials_protocol.csv)
 
-## Order Control
+当前已接入的傅立叶问卷：
 
-Trial order is not run in the raw CSV order. The task applies a balanced
-Latin-square order based on `participant_id`, or an explicit counterbalance row
-if one is passed through the launcher.
+- [pretest_fourier_protocol.csv](/Users/liujiany/work/CognitiveLoad/code_exp/stimuli/questionnaires/pretest_fourier_protocol.csv)
+- [posttest_fourier_protocol.csv](/Users/liujiany/work/CognitiveLoad/code_exp/stimuli/questionnaires/posttest_fourier_protocol.csv)
 
-This gives a reproducible order assignment and controls sequence effects better
-than a simple shuffle.
+两份文件当前均为 `10` 道判断题。
 
-## Video and Questionnaire Interfaces
+## 输出文件
 
-- `video_file` is resolved relative to `code_exp/stimuli/videos/`
-- `pretest_form`, `rating_form`, and `posttest_form` are resolved relative to
-  `code_exp/stimuli/questionnaires/`
-
-If a questionnaire CSV contains:
-
-- `item_number`
-- `question_text`
-- `correct_answer`
-
-the task will run it as a real true/false form using `F = 对` and `J = 错`.
-The current timed presentation is:
-
-- statement: 4 s
-- response: 4 s
-- rest: 1 s
-
-After the judgement section, pretest and posttest both continue to a recall prompt.
-`posttest_fourier_protocol.csv` is the first live form currently wired in.
-
-If a video file is missing, or the local PsychoPy movie backend cannot create a
-playable movie stimulus for that file, the task does not crash. It falls back
-to a short placeholder screen instead, which is useful before the real
-materials are fully ready or while debugging on less stable platforms.
-
-## Outputs
-
-The task writes:
+任务会写出：
 
 - `learning_cycle_trial_log.csv`
 - `learning_cycle_questionnaire_responses.csv`
 - `learning_cycle_recall_responses.csv`
+- `learning_cycle_segment_ratings.csv`
 - `learning_cycle_events.csv`
 - `learning_cycle_order.csv`
 - `learning_cycle_config.json`
 
-## Configuration
-
-Most defaults are in:
-
-- [settings.py](/Users/liujiany/work/CognitiveLoad/code_exp/config/settings.py)
-
-Useful items:
-
-- `LEARNING_CYCLE_TRIALS_FILE`
-- `LEARNING_CYCLE_EXPECTED_TRIALS`
-- `LEARNING_CYCLE_MISSING_VIDEO_SECONDS`
-- `LEARNING_CYCLE_FULLSCREEN`
-- `LEARNING_CYCLE_ALLOW_GUI`
-
-## Run
+## 运行
 
 ```bash
-python code_exp/launcher.py --task learning_cycle --participant sub01 --session 001
+python launcher.py --task learning_cycle --participant sub01 --session 001
 ```
 
-Useful overrides:
+如果只想在 protocol 里单独测试这一阶段：
 
 ```bash
-python code_exp/launcher.py \
-  --task learning_cycle \
-  --participant sub01 \
-  --session 001 \
-  --lc-windowed \
-  --lc-counterbalance-row 2
+python launcher.py --test-mode --test-stage learning_cycle --auto-advance
 ```

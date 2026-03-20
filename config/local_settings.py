@@ -5,7 +5,7 @@ from __future__ import annotations
 # still take priority over these values when both are present.
 
 # EEG trigger settings
-TRIGGER_MODE = "dummy"  # "serial" or "dummy"
+TRIGGER_MODE = "neuracle_serial"  # "dummy", "serial", or "neuracle_serial"
 TRIGGER_PORT = "COM3"
 TRIGGER_BAUDRATE = 115200
 TRIGGER_TIMEOUT_SECONDS = 1.0
@@ -13,6 +13,10 @@ TRIGGER_WRITE_TIMEOUT_SECONDS = 1.0
 TRIGGER_RESET_CODE = 0
 TRIGGER_SERIAL_ENCODING = "byte"
 TRIGGER_SERIAL_TERMINATOR = b""
+TRIGGER_NEURACLE_DEVICE_ID = 1
+TRIGGER_NEURACLE_OUTPUT_FUNCTION_ID = 225
+TRIGGER_NEURACLE_ERROR_FUNCTION_ID = 131
+TRIGGER_NEURACLE_DEVICE_NAME_FUNCTION_ID = 4
 
 # PsychoPy window settings
 PSYCHOPY_MONITOR_NAME = "testMonitor"

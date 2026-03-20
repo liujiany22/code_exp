@@ -3,7 +3,9 @@ from __future__ import annotations
 import csv
 import json
 import os
+import subprocess
 import sys
+import tempfile
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -30,6 +32,9 @@ from config.settings import (
     LEARNING_CYCLE_QUESTIONNAIRE_DIR,
     LEARNING_CYCLE_QUESTION_REST_SECONDS,
     LEARNING_CYCLE_RESPONSE_SECONDS,
+    LEARNING_CYCLE_SEGMENT_RATING_MAX,
+    LEARNING_CYCLE_SEGMENT_RATING_MIN,
+    LEARNING_CYCLE_SEGMENT_SECONDS,
     LEARNING_CYCLE_STATEMENT_SECONDS,
     LEARNING_CYCLE_TEXT_COLOR,
     LEARNING_CYCLE_TRIALS_FILE,
@@ -95,6 +100,19 @@ class RecallResponseRow:
 
 
 @dataclass(frozen=True)
+class SegmentRatingRow:
+    TrialNumber: int
+    ItemId: str
+    Topic: str
+    SegmentIndex: int
+    TotalSegments: int
+    RatingValue: int
+    ResponseTime: str
+    SegmentFile: str
+    RatingMoment: str
+
+
+@dataclass(frozen=True)
 class LearningTrialLogRow:
     TrialNumber: int
     ItemId: str
@@ -130,10 +148,13 @@ class LearningCycleConfig:
     statement_seconds: float = LEARNING_CYCLE_STATEMENT_SECONDS
     response_seconds: float = LEARNING_CYCLE_RESPONSE_SECONDS
     question_rest_seconds: float = LEARNING_CYCLE_QUESTION_REST_SECONDS
+    segment_seconds: float = LEARNING_CYCLE_SEGMENT_SECONDS
+    segment_rating_min: int = LEARNING_CYCLE_SEGMENT_RATING_MIN
+    segment_rating_max: int = LEARNING_CYCLE_SEGMENT_RATING_MAX
     inter_trial_rest_seconds: float = LEARNING_CYCLE_INTER_TRIAL_REST_SECONDS
     counterbalance_row: int | None = None
     auto_advance: bool = False
-    include_rating_phase: bool = True
+    include_rating_phase: bool = False
     show_task_intro: bool = True
     show_completion: bool = True
 
@@ -152,8 +173,12 @@ class LearningCycleConfig:
             raise ValueError("response_seconds must be non-negative.")
         if self.question_rest_seconds < 0:
             raise ValueError("question_rest_seconds must be non-negative.")
+        if self.segment_seconds <= 0:
+            raise ValueError("segment_seconds must be positive.")
         if self.inter_trial_rest_seconds < 0:
             raise ValueError("inter_trial_rest_seconds must be non-negative.")
+        if self.segment_rating_max < self.segment_rating_min:
+            raise ValueError("segment_rating_max must be >= segment_rating_min.")
         if len(self.window_size) != 2 or any(size <= 0 for size in self.window_size):
             raise ValueError("window_size must contain two positive integers.")
 
@@ -198,6 +223,17 @@ class TrialOrderBuilder:
 
 
 class TrialLogger:
+    SEGMENT_RATING_FIELDS = (
+        "TrialNumber",
+        "ItemId",
+        "Topic",
+        "SegmentIndex",
+        "TotalSegments",
+        "RatingValue",
+        "ResponseTime",
+        "SegmentFile",
+        "RatingMoment",
+    )
     RECALL_FIELDS = (
         "TrialNumber",
         "ItemId",
@@ -252,6 +288,7 @@ class TrialLogger:
         self.event_rows: list[dict[str, object]] = []
         self.questionnaire_rows: list[dict[str, object]] = []
         self.recall_rows: list[dict[str, object]] = []
+        self.segment_rating_rows: list[dict[str, object]] = []
 
     def log_trial(self, row: LearningTrialLogRow) -> None:
         self.trial_rows.append(asdict(row))
@@ -261,6 +298,9 @@ class TrialLogger:
 
     def log_recall_response(self, row: RecallResponseRow) -> None:
         self.recall_rows.append(asdict(row))
+
+    def log_segment_rating(self, row: SegmentRatingRow) -> None:
+        self.segment_rating_rows.append(asdict(row))
 
     def log_event(
         self,
@@ -301,6 +341,11 @@ class TrialLogger:
             self.recall_rows,
         )
         self._write_csv(
+            output_dir / "learning_cycle_segment_ratings.csv",
+            self.SEGMENT_RATING_FIELDS,
+            self.segment_rating_rows,
+        )
+        self._write_csv(
             output_dir / "learning_cycle_events.csv",
             self.EVENT_FIELDS,
             self.event_rows,
@@ -335,6 +380,10 @@ class LearningCycleTask:
         self.title_stim = None
         self.subtitle_stim = None
         self.detail_stim = None
+        self.mouse = None
+        self.segment_rating_boxes = []
+        self.segment_rating_labels = []
+        self.segment_rating_hint = None
 
     def run(self) -> Path:
         self._prepare_psychopy()
@@ -398,6 +447,7 @@ class LearningCycleTask:
         )
         self._force_mouse_visible()
         self.global_clock = core.Clock()
+        self.mouse = event.Mouse(win=self.window)
 
         self.title_stim = visual.TextStim(
             win=self.window,
@@ -426,6 +476,50 @@ class LearningCycleTask:
             colorSpace="named",
             height=0.028,
             pos=(0, -0.38),
+            wrapWidth=1.5,
+        )
+        self.segment_rating_boxes = []
+        self.segment_rating_labels = []
+        spacing = 0.14
+        start_x = -((self.config.segment_rating_max - self.config.segment_rating_min) * spacing) / 2
+        for index, rating_value in enumerate(
+            range(self.config.segment_rating_min, self.config.segment_rating_max + 1)
+        ):
+            x_position = start_x + (index * spacing)
+            self.segment_rating_boxes.append(
+                visual.Rect(
+                    win=self.window,
+                    width=0.11,
+                    height=0.11,
+                    pos=(x_position, -0.16),
+                    lineColor="white",
+                    fillColor="#1a1a1a",
+                    colorSpace="named",
+                )
+            )
+            self.segment_rating_labels.append(
+                visual.TextStim(
+                    win=self.window,
+                    text=str(rating_value),
+                    font=self.config.font,
+                    color="white",
+                    colorSpace="named",
+                    height=0.045,
+                    pos=(x_position, -0.16),
+                )
+            )
+        self.segment_rating_hint = visual.TextStim(
+            win=self.window,
+            text=(
+                f"{self.config.segment_rating_min} = 最低     "
+                f"{self.config.segment_rating_max} = 最高\n"
+                "可点击条块，或按键盘数字 1-5。"
+            ),
+            font=self.config.font,
+            color=self.config.text_color,
+            colorSpace="named",
+            height=0.028,
+            pos=(0, -0.32),
             wrapWidth=1.5,
         )
 
@@ -582,11 +676,11 @@ class LearningCycleTask:
                 "视频学习任务\n\n"
                 f"共 {len(self.ordered_trials)} 个试次。\n"
                 "每个试次都包含前测、视频播放和后测。\n"
-                "前测和后测都由小测题目与复述任务两部分组成。"
+                "前测和后测都按照“先口头复述，再完成 10 道判断题”的顺序进行。"
             ),
             subtitle_text=(
-                "实验中会为您播放一段视频。您需要先完成基于该视频内容的小测，再谈谈您对视频内容的了解。\n"
-                "然后，请您观看这段视频，根据观看过程中学习到的知识，再次完成小测题目和复述任务。"
+                "实验中会为您播放一段视频。\n"
+                "视频会按 3 分钟切分，并在段间和播放结束后出现 1-5 评分条。"
             ),
             detail_text="视频开始和结束会记录 EEG 事件。按空格开始，Esc 中止。",
         )
@@ -600,7 +694,7 @@ class LearningCycleTask:
             form_file=trial.pretest_form,
             prompt_title="前测知识问卷",
             prompt_body=(
-                "请先完成基于该视频内容的小测，然后进行复述任务。"
+                "请先进行口头复述，再完成 10 道判断题。"
             ),
         )
 
@@ -630,7 +724,7 @@ class LearningCycleTask:
             form_file=trial.posttest_form,
             prompt_title="后测测验",
             prompt_body=(
-                "请根据刚刚观看的视频内容再次完成小测，然后进行复述任务。"
+                "请先复述你对刚刚视频内容的理解，再完成 10 道判断题。"
             ),
         )
 
@@ -680,7 +774,22 @@ class LearningCycleTask:
         )
 
         questionnaire_items = self._load_questionnaire_items(resolved_form)
+        if phase_name in {"pretest", "posttest"} and questionnaire_items:
+            if len(questionnaire_items) < 10:
+                raise ValueError(
+                    f"{phase_name} requires 10 questionnaire items, found {len(questionnaire_items)}: {resolved_form}"
+                )
+            questionnaire_items = questionnaire_items[:10]
         include_recall = phase_name in {"pretest", "posttest"}
+        if include_recall:
+            recall_status = self._run_recall_phase(
+                trial_number=trial_number,
+                trial=trial,
+                phase_name=phase_name,
+            )
+        else:
+            recall_status = "not_applicable"
+
         if questionnaire_items:
             self._wait_for_space(
                 main_text=(
@@ -720,14 +829,6 @@ class LearningCycleTask:
                 ),
             )
             questionnaire_status = "placeholder_completed"
-
-        recall_status = "not_applicable"
-        if include_recall:
-            recall_status = self._run_recall_phase(
-                trial_number=trial_number,
-                trial=trial,
-                phase_name=phase_name,
-            )
 
         self._show_blank(self.config.post_phase_blank_seconds)
         combined_status = questionnaire_status
@@ -1005,27 +1106,90 @@ class LearningCycleTask:
         trial: LearningTrialSpec,
     ) -> tuple[str, float]:
         video_path = self._resolve_video_path(trial.video_file)
-        start_record = self.context.trigger.emit(
-            name="learning_cycle.video_start",
-            code=LEARNING_CYCLE["video_start"],
-            width_ms=DEFAULT_TRIGGER_WIDTH_MS,
-        )
-        self.logger.log_event(
-            trial_number=trial_number,
-            trial=trial,
-            event_name="video_start",
-            event_code=LEARNING_CYCLE["video_start"],
-            timestamp=start_record.timestamp,
-            detail=video_path,
-        )
-
         if Path(video_path).exists():
             try:
-                status, elapsed_seconds = self._play_video_file(video_path)
+                with tempfile.TemporaryDirectory(
+                    prefix=f"learning_cycle_segments_{trial.item_id}_"
+                ) as cache_dir:
+                    segment_paths = self._prepare_video_segments(
+                        video_path=video_path,
+                        cache_dir=Path(cache_dir),
+                    )
+                    start_record = self.context.trigger.emit(
+                        name="learning_cycle.video_start",
+                        code=LEARNING_CYCLE["video_start"],
+                        width_ms=DEFAULT_TRIGGER_WIDTH_MS,
+                    )
+                    self.logger.log_event(
+                        trial_number=trial_number,
+                        trial=trial,
+                        event_name="video_start",
+                        event_code=LEARNING_CYCLE["video_start"],
+                        timestamp=start_record.timestamp,
+                        detail=f"{video_path}|segments={len(segment_paths)}",
+                    )
+
+                    elapsed_seconds = 0.0
+                    segment_statuses: list[str] = []
+                    total_segments = len(segment_paths)
+                    for segment_index, segment_path in enumerate(segment_paths, start=1):
+                        segment_status, segment_elapsed_seconds = self._play_video_file(
+                            str(segment_path)
+                        )
+                        segment_statuses.append(segment_status)
+                        elapsed_seconds += segment_elapsed_seconds
+
+                        rating_moment = (
+                            "final"
+                            if segment_index == total_segments
+                            else "between_segments"
+                        )
+                        if segment_index == total_segments:
+                            end_record = self.context.trigger.emit(
+                                name="learning_cycle.video_end",
+                                code=LEARNING_CYCLE["video_end"],
+                                width_ms=DEFAULT_TRIGGER_WIDTH_MS,
+                            )
+                            self.logger.log_event(
+                                trial_number=trial_number,
+                                trial=trial,
+                                event_name="video_end",
+                                event_code=LEARNING_CYCLE["video_end"],
+                                timestamp=end_record.timestamp,
+                                detail=(
+                                    f"{video_path}|segments={total_segments}|"
+                                    f"status={','.join(segment_statuses)}|"
+                                    f"elapsed={elapsed_seconds:.6f}"
+                                ),
+                            )
+
+                        self._collect_segment_rating(
+                            trial_number=trial_number,
+                            trial=trial,
+                            segment_index=segment_index,
+                            total_segments=total_segments,
+                            segment_file=str(segment_path),
+                            rating_moment=rating_moment,
+                        )
+
+                    status = "played_segmented"
             except TaskAborted:
                 raise
             except Exception as exc:
                 error_detail = self._summarize_video_error(exc)
+                start_record = self.context.trigger.emit(
+                    name="learning_cycle.video_start",
+                    code=LEARNING_CYCLE["video_start"],
+                    width_ms=DEFAULT_TRIGGER_WIDTH_MS,
+                )
+                self.logger.log_event(
+                    trial_number=trial_number,
+                    trial=trial,
+                    event_name="video_start",
+                    event_code=LEARNING_CYCLE["video_start"],
+                    timestamp=start_record.timestamp,
+                    detail=video_path,
+                )
                 elapsed_seconds = self._run_missing_video_placeholder(
                     trial_number,
                     trial,
@@ -1036,27 +1200,52 @@ class LearningCycleTask:
                     ),
                 )
                 status = "placeholder_unplayable_video"
+                end_record = self.context.trigger.emit(
+                    name="learning_cycle.video_end",
+                    code=LEARNING_CYCLE["video_end"],
+                    width_ms=DEFAULT_TRIGGER_WIDTH_MS,
+                )
+                self.logger.log_event(
+                    trial_number=trial_number,
+                    trial=trial,
+                    event_name="video_end",
+                    event_code=LEARNING_CYCLE["video_end"],
+                    timestamp=end_record.timestamp,
+                    detail=f"{video_path}|{status}|{elapsed_seconds:.6f}",
+                )
         else:
+            start_record = self.context.trigger.emit(
+                name="learning_cycle.video_start",
+                code=LEARNING_CYCLE["video_start"],
+                width_ms=DEFAULT_TRIGGER_WIDTH_MS,
+            )
+            self.logger.log_event(
+                trial_number=trial_number,
+                trial=trial,
+                event_name="video_start",
+                event_code=LEARNING_CYCLE["video_start"],
+                timestamp=start_record.timestamp,
+                detail=video_path,
+            )
             elapsed_seconds = self._run_missing_video_placeholder(
                 trial_number,
                 trial,
                 video_path,
             )
             status = "placeholder_missing_video"
-
-        end_record = self.context.trigger.emit(
-            name="learning_cycle.video_end",
-            code=LEARNING_CYCLE["video_end"],
-            width_ms=DEFAULT_TRIGGER_WIDTH_MS,
-        )
-        self.logger.log_event(
-            trial_number=trial_number,
-            trial=trial,
-            event_name="video_end",
-            event_code=LEARNING_CYCLE["video_end"],
-            timestamp=end_record.timestamp,
-            detail=f"{video_path}|{status}|{elapsed_seconds:.6f}",
-        )
+            end_record = self.context.trigger.emit(
+                name="learning_cycle.video_end",
+                code=LEARNING_CYCLE["video_end"],
+                width_ms=DEFAULT_TRIGGER_WIDTH_MS,
+            )
+            self.logger.log_event(
+                trial_number=trial_number,
+                trial=trial,
+                event_name="video_end",
+                event_code=LEARNING_CYCLE["video_end"],
+                timestamp=end_record.timestamp,
+                detail=f"{video_path}|{status}|{elapsed_seconds:.6f}",
+            )
 
         self._show_blank(self.config.post_phase_blank_seconds)
         return status, elapsed_seconds
@@ -1178,6 +1367,151 @@ class LearningCycleTask:
         if finished_constant is not None and status == finished_constant:
             return True
         return False
+
+    def _prepare_video_segments(
+        self,
+        video_path: str,
+        cache_dir: Path,
+    ) -> list[Path]:
+        output_pattern = cache_dir / "segment_%03d.mp4"
+        segment_seconds = max(1, int(self.config.segment_seconds))
+        command = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            video_path,
+            "-map",
+            "0:v:0",
+            "-map",
+            "0:a?",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "-crf",
+            "23",
+            "-pix_fmt",
+            "yuv420p",
+            "-force_key_frames",
+            f"expr:gte(t,n_forced*{segment_seconds})",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+            "-f",
+            "segment",
+            "-segment_time",
+            str(segment_seconds),
+            "-reset_timestamps",
+            "1",
+            str(output_pattern),
+        ]
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if completed.returncode != 0:
+            error_text = completed.stderr.strip() or completed.stdout.strip()
+            raise RuntimeError(f"ffmpeg segmenting failed: {error_text}")
+
+        segment_paths = sorted(cache_dir.glob("segment_*.mp4"))
+        if not segment_paths:
+            raise RuntimeError("ffmpeg segmenting produced no playable segments.")
+        return segment_paths
+
+    def _collect_segment_rating(
+        self,
+        trial_number: int,
+        trial: LearningTrialSpec,
+        segment_index: int,
+        total_segments: int,
+        segment_file: str,
+        rating_moment: str,
+    ) -> None:
+        response_clock = self.core.Clock()
+        self.event.clearEvents()
+        self.mouse.clickReset()
+        previous_buttons = self.mouse.getPressed()
+        rating_values = list(
+            range(self.config.segment_rating_min, self.config.segment_rating_max + 1)
+        )
+
+        while True:
+            self._ensure_escape_not_pressed()
+            keys = self.event.getKeys(
+                keyList=[str(value) for value in rating_values] + ["escape"],
+                timeStamped=response_clock,
+            )
+            for key, response_time in keys:
+                if key == "escape":
+                    raise TaskAborted("Experiment aborted by user.")
+                rating_value = int(key)
+                self.logger.log_segment_rating(
+                    SegmentRatingRow(
+                        TrialNumber=trial_number,
+                        ItemId=trial.item_id,
+                        Topic=trial.topic,
+                        SegmentIndex=segment_index,
+                        TotalSegments=total_segments,
+                        RatingValue=rating_value,
+                        ResponseTime=f"{response_time:.6f}",
+                        SegmentFile=segment_file,
+                        RatingMoment=rating_moment,
+                    )
+                )
+                return
+
+            buttons = self.mouse.getPressed()
+            if buttons != previous_buttons:
+                for rating_value, box in zip(rating_values, self.segment_rating_boxes):
+                    if box.contains(self.mouse) and any(buttons):
+                        self.logger.log_segment_rating(
+                            SegmentRatingRow(
+                                TrialNumber=trial_number,
+                                ItemId=trial.item_id,
+                                Topic=trial.topic,
+                                SegmentIndex=segment_index,
+                                TotalSegments=total_segments,
+                                RatingValue=rating_value,
+                                ResponseTime=f"{response_clock.getTime():.6f}",
+                                SegmentFile=segment_file,
+                                RatingMoment=rating_moment,
+                            )
+                        )
+                        return
+            previous_buttons = buttons
+
+            self._draw_segment_rating_page(segment_index, total_segments, rating_moment)
+            self.window.flip()
+
+    def _draw_segment_rating_page(
+        self,
+        segment_index: int,
+        total_segments: int,
+        rating_moment: str,
+    ) -> None:
+        if rating_moment == "final":
+            self.title_stim.text = "视频播放结束"
+            self.subtitle_stim.text = (
+                f"请对第 {segment_index} 段 / 共 {total_segments} 段视频进行评分。"
+            )
+        else:
+            self.title_stim.text = "片段播放结束"
+            self.subtitle_stim.text = (
+                f"请对第 {segment_index} 段 / 共 {total_segments} 段视频进行评分。"
+            )
+        self.detail_stim.text = ""
+        self.title_stim.draw()
+        self.subtitle_stim.draw()
+        for box, label in zip(self.segment_rating_boxes, self.segment_rating_labels):
+            box.draw()
+            label.draw()
+        self.segment_rating_hint.draw()
 
     def _run_missing_video_placeholder(
         self,

@@ -32,9 +32,10 @@
 - 静息态支持固定或随机的睁闭眼顺序，也支持阶段切换提示音。
 - 工作记忆前测支持分别运行 `digit span`、`corsi blocks`，或顺序运行两者。
 - 心算任务已支持 block 结构，以及“题干 / 中央+过渡 / 蓝色数字判等 / 中央+过渡”的时序控制。
-- 视频学习任务支持 1 / 2 / 6 试次结构、可选主观量表阶段和组间休息。
-- `fourier_protocol` 的正式后测已接入真实判断题，答题键为 `F=对`、`J=错`。
-- 视频学习前测/后测现支持“小测判断题 + 复述任务”双段结构；判断题默认时序为 `4s + 4s + 1s`。
+- 视频学习任务支持 1 / 2 / 6 试次结构；当前正式 protocol 只启用 `fourier_protocol` 一组。
+- `fourier_protocol` 的正式前测和后测均已接入真实判断题，答题键为 `F=对`、`J=错`。
+- 视频学习前测/后测现支持“先口头复述，再完成 10 道判断题”；判断题默认时序为 `4s + 4s + 1s`。
+- 视频会在播放前临时切分为 3 分钟片段，并在段间及播放结束后插入 1-5 评分条。
 
 ## 运行完整实验
 
@@ -96,8 +97,8 @@ python launcher.py --participant sub01 --session 001
 15. 柯西方块任务：直接进入任务，不再单独弹介绍页
 16. 心算任务：任务说明 + 3 个 block + 休息
     每个 block：25 ×【黑色加法题呈现 6 秒 -> 中央“+”过渡 1 秒 -> 蓝色数字判等 4 秒（左键=相等，右键=不等）-> 中央“+”过渡 1 秒】+ 30 秒休息
-17. 视频学习任务：说明两组“前测 + 视频 + 后测”的结构
-18. 视频学习任务：2 组实验，每组包含前测 + 视频 + 后测，两组之间休息 2 分钟
+17. 视频学习任务：说明当前傅立叶组“前测 + 视频 + 后测”的结构
+18. 视频学习任务：当前运行 1 组实验，结构为前测 + 视频 + 后测
 19. 实验结束
 
 ### 当前实现说明
@@ -155,7 +156,15 @@ python launcher.py --task resting_state --auto-advance --eyes-open 3 --eyes-clos
 
 静息态默认时长为睁眼 180 秒、闭眼 180 秒。
 
-如需接硬件，请配置 `TRIGGER_MODE` / `TRIGGER_PORT` 用于 EEG；如果需要并行写入 EyeLink message，则设置 `EYELINK_ENABLED=1`。
+如需接 Neuracle TriggerBox，请在 `config/local_settings.py` 中配置：
+
+```python
+TRIGGER_MODE = "neuracle_serial"
+TRIGGER_PORT = "COM3"
+```
+
+此模式会按 `Neuracle/` 目录中的官方串口协议发送 trigger，而不是直接向串口裸写一个字节。
+如果需要并行写入 EyeLink message，则另外设置 `EYELINK_ENABLED=1`。
 
 如果主实验运行在 Python 3.10 下，请将 `EYELINK_BACKEND` 设为 `relay`，并在独立的 Python 3.9 进程中运行 EyeLink relay server：
 

@@ -33,8 +33,8 @@ from tasks.wm_pretest.task import WMPretestConfig, run as run_wm_pretest
 
 LEARNING_CYCLE_INTRO = (
     "接下来进入视频学习任务。\n"
-    "每组实验都包含前测、视频播放和后测三个部分。\n"
-    "请认真观看视频，并根据要求完成前后测作答。"
+    "当前版本先进行傅立叶变换这一组。\n"
+    "整个流程包含前测、视频播放和后测三个部分。"
 )
 
 PRACTICE_LEARNING_DEMO = (
@@ -376,14 +376,17 @@ class ProtocolTask:
             stage_name="视频学习引导语",
             title="视频学习任务",
             subtitle=LEARNING_CYCLE_INTRO,
-            detail="每两组之间会安排休息时间。按空格开始任务。",
+            detail=(
+                "前测和后测均为：先口头复述，再完成 10 道判断题。\n"
+                "视频按 3 分钟切分，段间和最后会出现 1-5 评分条。按空格开始任务。"
+            ),
         )
         run_learning_cycle(
             self.context,
             config=LearningCycleConfig(
                 trials_file=LEARNING_CYCLE_PROTOCOL_TRIALS_FILE,
                 questionnaire_dir=LEARNING_CYCLE_QUESTIONNAIRE_DIR,
-                expected_trials=2,
+                expected_trials=1,
                 inter_trial_rest_seconds=120.0,
                 include_rating_phase=False,
                 show_task_intro=False,

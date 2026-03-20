@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import csv
+from pathlib import Path
 
 from common.participant_info import collect_participant_info
 from config.settings import (
     LEARNING_CYCLE_INTER_TRIAL_REST_SECONDS,
+    LEARNING_CYCLE_PROTOCOL_TRIALS_FILE,
     MENTAL_ARITHMETIC_TEST_BLOCK_COUNT,
     MENTAL_ARITHMETIC_TEST_BLOCK_REST_SECONDS,
     MENTAL_ARITHMETIC_TEST_FIXATION_SECONDS,
@@ -29,6 +32,12 @@ from tasks.wm_pretest.task import WMPretestConfig
 
 def _build_task_map() -> dict[str, object]:
     return {slug: spec.runner for slug, spec in TASK_MAP.items()}
+
+
+def _count_condition_rows(trials_file: Path | str) -> int:
+    path = Path(trials_file)
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        return sum(1 for _ in csv.DictReader(handle))
 
 
 def _build_resting_state_config(args: argparse.Namespace) -> RestingStateConfig:
@@ -166,8 +175,13 @@ def _build_mental_arithmetic_config(
 
 def _build_learning_cycle_config(args: argparse.Namespace) -> LearningCycleConfig:
     default_config = LearningCycleConfig()
+    trials_file = (
+        LEARNING_CYCLE_PROTOCOL_TRIALS_FILE
+        if args.lc_trials_file is None
+        else args.lc_trials_file
+    )
     return LearningCycleConfig(
-        trials_file=default_config.trials_file if args.lc_trials_file is None else args.lc_trials_file,
+        trials_file=trials_file,
         questionnaire_dir=default_config.questionnaire_dir,
         fullscreen=False if args.lc_windowed else default_config.fullscreen,
         allow_gui=False if args.lc_no_gui else default_config.allow_gui,
@@ -176,7 +190,7 @@ def _build_learning_cycle_config(args: argparse.Namespace) -> LearningCycleConfi
         background_color=default_config.background_color,
         text_color=default_config.text_color,
         font=default_config.font,
-        expected_trials=default_config.expected_trials,
+        expected_trials=_count_condition_rows(trials_file),
         missing_video_seconds=(
             default_config.missing_video_seconds
             if args.lc_missing_video_seconds is None
@@ -189,6 +203,7 @@ def _build_learning_cycle_config(args: argparse.Namespace) -> LearningCycleConfi
         inter_trial_rest_seconds=LEARNING_CYCLE_INTER_TRIAL_REST_SECONDS,
         counterbalance_row=args.lc_counterbalance_row,
         auto_advance=args.auto_advance,
+        include_rating_phase=False,
     )
 
 

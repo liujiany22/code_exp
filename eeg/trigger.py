@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import socket
+import struct
 import sys
 from time import monotonic, sleep
 from typing import Optional
@@ -142,6 +143,202 @@ class SerialTriggerBackend(BaseTriggerBackend):
             "Unsupported serial trigger encoding: "
             f"{self.settings.encoding}. Expected 'byte' or 'ascii'."
         )
+
+
+@dataclass(frozen=True)
+class NeuracleSerialTriggerSettings:
+    baudrate: int = 115200
+    timeout_seconds: float = 60.0
+    write_timeout_seconds: float = 1.0
+    device_id: int = 1
+    output_function_id: int = 225
+    error_function_id: int = 131
+    device_name_function_id: int = 4
+    label: str = "neuracle-serial"
+
+
+class NeuracleSerialTriggerBackend(BaseTriggerBackend):
+    ERROR_TYPES = {
+        0: "None",
+        1: "FrameHeader",
+        2: "FramePayload",
+        3: "ChannelNotExist",
+        4: "DeviceID",
+        5: "FunctionID",
+        6: "SensorType",
+    }
+
+    def __init__(
+        self,
+        port: str,
+        settings: NeuracleSerialTriggerSettings | None = None,
+    ) -> None:
+        self.port = port
+        self.settings = settings or NeuracleSerialTriggerSettings()
+        self._serial = None
+
+    def connect(self) -> None:
+        if not self.port:
+            raise RuntimeError(
+                "TRIGGER_PORT is empty. Set the COM port before using "
+                "TRIGGER_MODE='neuracle_serial'."
+            )
+
+        try:
+            import serial  # type: ignore
+            from serial.tools import list_ports  # type: ignore
+        except ModuleNotFoundError as exc:
+            raise RuntimeError(
+                "pyserial is required for Neuracle serial trigger mode. "
+                "Install it with `python -m pip install pyserial`."
+            ) from exc
+
+        available_ports = {port_info.device for port_info in list_ports.comports()}
+        if available_ports and self.port not in available_ports:
+            raise RuntimeError(
+                f"Neuracle trigger COM port {self.port!r} is not currently available. "
+                f"Detected ports: {sorted(available_ports)}"
+            )
+
+        self._serial = serial.Serial(
+            port=self.port,
+            baudrate=self.settings.baudrate,
+            timeout=self.settings.timeout_seconds,
+            write_timeout=self.settings.write_timeout_seconds,
+        )
+        self._reset_buffers()
+
+        try:
+            device_name = self._get_device_name()
+        except Exception:
+            self.close()
+            raise
+
+        print(
+            f"[{self.settings.label}] trigger backend connected "
+            f"port={self.port} baudrate={self.settings.baudrate} "
+            f"device={device_name}"
+        )
+
+    def send_code(self, code: int, name: str | None = None) -> None:
+        if not isinstance(code, int):
+            raise TypeError(f"Trigger code must be int, got {type(code).__name__}.")
+        if not 0 <= code <= 255:
+            raise ValueError(f"Trigger code must be in 0..255, got {code}.")
+
+        self._write_frame(
+            function_id=self.settings.output_function_id,
+            payload=bytes([code]),
+        )
+        response = self._read_response(self.settings.output_function_id)
+        if not response or response[0] != self.settings.output_function_id:
+            raise RuntimeError(
+                "Neuracle trigger box did not acknowledge output_event_data "
+                f"for code {code}. Response={response!r}"
+            )
+
+    def reset(self) -> None:
+        return
+
+    def close(self) -> None:
+        if self._serial is None:
+            return
+        if getattr(self._serial, "is_open", False):
+            self._serial.close()
+        self._serial = None
+
+    def _reset_buffers(self) -> None:
+        serial_handle = self._require_connected()
+        reset_input = getattr(serial_handle, "reset_input_buffer", None)
+        reset_output = getattr(serial_handle, "reset_output_buffer", None)
+        if callable(reset_input):
+            reset_input()
+        else:
+            flush_input = getattr(serial_handle, "flushInput", None)
+            if callable(flush_input):
+                flush_input()
+        if callable(reset_output):
+            reset_output()
+        else:
+            flush_output = getattr(serial_handle, "flushOutput", None)
+            if callable(flush_output):
+                flush_output()
+
+    def _get_device_name(self) -> str:
+        self._write_frame(
+            function_id=self.settings.device_name_function_id,
+            payload=b"",
+        )
+        response = self._read_response(self.settings.device_name_function_id)
+        if not response:
+            raise RuntimeError("Neuracle trigger box returned an empty device name.")
+        return response.decode("utf-8", errors="ignore").strip() or repr(response)
+
+    def _write_frame(self, function_id: int, payload: bytes) -> None:
+        serial_handle = self._require_connected()
+        frame = struct.pack(
+            "<BBH",
+            self.settings.device_id,
+            function_id,
+            len(payload),
+        ) + payload
+        self._reset_input_only()
+        serial_handle.write(frame)
+        flush = getattr(serial_handle, "flush", None)
+        if callable(flush):
+            flush()
+
+    def _reset_input_only(self) -> None:
+        serial_handle = self._require_connected()
+        reset_input = getattr(serial_handle, "reset_input_buffer", None)
+        if callable(reset_input):
+            reset_input()
+            return
+        flush_input = getattr(serial_handle, "flushInput", None)
+        if callable(flush_input):
+            flush_input()
+
+    def _read_response(self, expected_function_id: int) -> bytes:
+        serial_handle = self._require_connected()
+        header = self._read_exact(serial_handle, 4)
+        device_id, function_id, payload_length = struct.unpack("<BBH", header)
+
+        if device_id != self.settings.device_id:
+            raise RuntimeError(
+                "Neuracle trigger box returned an unexpected device ID. "
+                f"Expected {self.settings.device_id}, received {device_id}."
+            )
+
+        if function_id == self.settings.error_function_id:
+            error_payload = self._read_exact(serial_handle, payload_length)
+            error_code = error_payload[0] if error_payload else -1
+            error_name = self.ERROR_TYPES.get(error_code, f"Unknown({error_code})")
+            raise RuntimeError(f"Neuracle trigger box returned an error: {error_name}")
+
+        if function_id != expected_function_id:
+            raise RuntimeError(
+                "Neuracle trigger box returned an unexpected function ID. "
+                f"Expected {expected_function_id}, received {function_id}."
+            )
+
+        return self._read_exact(serial_handle, payload_length)
+
+    @staticmethod
+    def _read_exact(serial_handle, size: int) -> bytes:
+        if size == 0:
+            return b""
+        data = serial_handle.read(size)
+        if len(data) != size:
+            raise RuntimeError(
+                "Timed out while reading from the Neuracle trigger box. "
+                f"Expected {size} bytes, received {len(data)}."
+            )
+        return data
+
+    def _require_connected(self):
+        if self._serial is None:
+            raise RuntimeError("Neuracle serial trigger backend is not connected.")
+        return self._serial
 
 
 @dataclass(frozen=True)
@@ -408,6 +605,7 @@ def get_trigger(
     mode: str = "dummy",
     port: Optional[str] = None,
     serial_settings: SerialTriggerSettings | None = None,
+    neuracle_serial_settings: NeuracleSerialTriggerSettings | None = None,
     eyelink_settings: EyeLinkTriggerSettings | EyeLinkRelaySettings | None = None,
 ) -> TriggerClient:
     backends: list[BaseTriggerBackend] = []
@@ -419,6 +617,13 @@ def get_trigger(
             SerialTriggerBackend(
                 port=port or "",
                 settings=serial_settings,
+            )
+        )
+    elif mode == "neuracle_serial":
+        backends.append(
+            NeuracleSerialTriggerBackend(
+                port=port or "",
+                settings=neuracle_serial_settings,
             )
         )
     else:

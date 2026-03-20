@@ -1,3 +1,2 @@
 base_position,item_id,topic,load_level,video_file,planned_minutes,pretest_form,rating_form,posttest_form,notes
 1,fourier_protocol,傅立叶变换,medium,fourier_protocol.mp4,5.0,pretest_fourier_protocol.csv,,posttest_fourier_protocol.csv,protocol group 1
-2,statistics_protocol,统计基础,medium,statistics_protocol.mp4,5.0,pretest_statistics_protocol.csv,,posttest_statistics_protocol.csv,protocol group 2

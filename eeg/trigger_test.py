@@ -24,6 +24,10 @@ from config.settings import (
     EYELINK_SCREEN_HEIGHT,
     EYELINK_SCREEN_WIDTH,
     TRIGGER_BAUDRATE,
+    TRIGGER_NEURACLE_DEVICE_ID,
+    TRIGGER_NEURACLE_DEVICE_NAME_FUNCTION_ID,
+    TRIGGER_NEURACLE_ERROR_FUNCTION_ID,
+    TRIGGER_NEURACLE_OUTPUT_FUNCTION_ID,
     TRIGGER_RESET_CODE,
     TRIGGER_SERIAL_ENCODING,
     TRIGGER_SERIAL_TERMINATOR,
@@ -33,6 +37,7 @@ from config.settings import (
 from eeg.trigger import (
     EyeLinkRelaySettings,
     EyeLinkTriggerSettings,
+    NeuracleSerialTriggerSettings,
     SerialTriggerSettings,
     get_trigger,
 )
@@ -49,6 +54,15 @@ def main() -> None:
             reset_code=TRIGGER_RESET_CODE,
             encoding=TRIGGER_SERIAL_ENCODING,
             terminator=TRIGGER_SERIAL_TERMINATOR,
+        ),
+        neuracle_serial_settings=NeuracleSerialTriggerSettings(
+            baudrate=TRIGGER_BAUDRATE,
+            timeout_seconds=TRIGGER_TIMEOUT_SECONDS,
+            write_timeout_seconds=TRIGGER_WRITE_TIMEOUT_SECONDS,
+            device_id=TRIGGER_NEURACLE_DEVICE_ID,
+            output_function_id=TRIGGER_NEURACLE_OUTPUT_FUNCTION_ID,
+            error_function_id=TRIGGER_NEURACLE_ERROR_FUNCTION_ID,
+            device_name_function_id=TRIGGER_NEURACLE_DEVICE_NAME_FUNCTION_ID,
         ),
         eyelink_settings=(
             None
