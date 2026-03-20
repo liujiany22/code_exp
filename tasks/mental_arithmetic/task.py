@@ -16,6 +16,7 @@ from common.psychopy_compat import (
 )
 from config.event_codes import MENTAL_ARITHMETIC
 from config.settings import (
+    DEFAULT_TRIGGER_WIDTH_MS,
     MENTAL_ARITHMETIC_ALLOW_GUI,
     MENTAL_ARITHMETIC_BACKGROUND_COLOR,
     MENTAL_ARITHMETIC_BLOCK_COUNT,
