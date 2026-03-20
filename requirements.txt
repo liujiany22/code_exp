@@ -1,0 +1,22 @@
+# Target runtime: Python 3.10
+
+# Core experiment runtime
+psychopy==2025.1.1
+pyserial>=3.5,<4
+
+# Video playback helpers
+# ffpyplayer is used by PsychoPy MovieStim.
+ffpyplayer>=4.5.0
+
+# Optional movie backend used on some machines.
+# Note: python-vlc alone is not enough. VLC / libvlc must also be installed
+# and discoverable by the operating system.
+python-vlc>=3.0.0
+
+# Optional packages, install separately only if needed:
+# psychtoolbox
+#   Improves keyboard / timing support on some setups.
+#
+# sr-research-pylink
+#   Needed only for direct EyeLink control. This is not installed from the
+#   default PyPI index in our current workflow.
