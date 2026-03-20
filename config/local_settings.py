@@ -6,7 +6,7 @@ from __future__ import annotations
 
 # EEG trigger settings
 TRIGGER_MODE = "neuracle_serial"  # "dummy", "serial", or "neuracle_serial"
-TRIGGER_PORT = "COM3"
+TRIGGER_PORT = "COM4"
 TRIGGER_BAUDRATE = 115200
 TRIGGER_TIMEOUT_SECONDS = 1.0
 TRIGGER_WRITE_TIMEOUT_SECONDS = 1.0
