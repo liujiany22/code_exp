@@ -231,7 +231,7 @@ class NeuracleSerialTriggerBackend(BaseTriggerBackend):
             payload=bytes([code]),
         )
         response = self._read_response(self.settings.output_function_id)
-        if not response or response[0] != self.settings.output_function_id:
+        if not self._is_output_ack_valid(response, code):
             raise RuntimeError(
                 "Neuracle trigger box did not acknowledge output_event_data "
                 f"for code {code}. Response={response!r}"
@@ -322,6 +322,12 @@ class NeuracleSerialTriggerBackend(BaseTriggerBackend):
             )
 
         return self._read_exact(serial_handle, payload_length)
+
+    def _is_output_ack_valid(self, response: bytes, code: int) -> bool:
+        if not response:
+            return False
+        first_byte = response[0]
+        return first_byte in {self.settings.output_function_id, code}
 
     @staticmethod
     def _read_exact(serial_handle, size: int) -> bytes:
