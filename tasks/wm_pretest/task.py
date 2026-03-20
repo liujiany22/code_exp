@@ -10,7 +10,11 @@ from pathlib import Path
 
 from common.data_io import ExperimentContext
 from common.external_task import ExternalTaskSpec, load_module_from_path
-from common.psychopy_compat import configure_macos_psychopy_runtime
+from common.psychopy_compat import (
+    configure_macos_psychopy_runtime,
+    get_primary_screen_size,
+    safe_close_window,
+)
 from common.ui import show_message, wait_for_continue
 from config.event_codes import WM_PRETEST
 from config.settings import (
@@ -23,6 +27,7 @@ from config.settings import (
     WM_PRETEST_FORCE_MOUSE_VISIBLE,
     WM_PRETEST_KEYBOARD_BACKEND,
     WM_PRETEST_MACOS_WINDOWED,
+    WM_PRETEST_SKIP_FRAME_RATE_CHECK,
     WM_PRETEST_TEST_TASK_TIMEOUT_SECONDS,
 )
 
@@ -188,9 +193,16 @@ def _install_window_compatibility(module: object) -> None:
     def setup_window_with_defaults(expInfo=None, win=None):
         if sys.platform == "darwin" and win is None and WM_PRETEST_MACOS_WINDOWED:
             module._fullScr = False
+        if win is None and getattr(module, "_fullScr", False):
+            screen_size = get_primary_screen_size()
+            if screen_size is not None:
+                module._winSize = list(screen_size)
 
         created_window = original_setup_window(expInfo=expInfo, win=win)
         force_mouse_visible(created_window)
+
+        if WM_PRETEST_SKIP_FRAME_RATE_CHECK:
+            created_window._monitorFrameRate = WM_PRETEST_FRAME_RATE_FALLBACK
 
         if sys.platform == "darwin":
             created_window._monitorFrameRate = WM_PRETEST_FRAME_RATE_FALLBACK
@@ -204,7 +216,7 @@ def _install_window_compatibility(module: object) -> None:
 
         return created_window
 
-    if sys.platform == "darwin" and original_get_frame_rate is not None:
+    if WM_PRETEST_SKIP_FRAME_RATE_CHECK and original_get_frame_rate is not None:
         module.visual.Window.getActualFrameRate = safe_get_frame_rate
 
     module.setupWindow = setup_window_with_defaults
@@ -307,7 +319,7 @@ def _run_external_psychopy_task(
                 module.endExperiment(thisExp=this_exp, win=win)
             this_exp.abort()
         if win is not None:
-            win.close()
+            safe_close_window(win)
         _emit_boundary(context, f"{spec.name}_end", spec.task_code_end)
 
     return {

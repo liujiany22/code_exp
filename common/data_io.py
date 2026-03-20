@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+import shutil
+import tempfile
 
 from common.participant_info import ParticipantInfo, write_participant_info
 from config.settings import (
@@ -47,12 +49,15 @@ class ExperimentContext:
     output_dir: Path
     trigger: TriggerClient
     participant_info: ParticipantInfo
+    persist_outputs: bool = True
+    temp_root: Path | None = None
 
 
 def build_context(
     participant_id: str = "pilot",
     session_id: str = DEFAULT_SESSION_ID,
     participant_info: ParticipantInfo | None = None,
+    persist_outputs: bool = True,
 ) -> ExperimentContext:
     if participant_info is None:
         participant_info = ParticipantInfo(
@@ -64,9 +69,17 @@ def build_context(
     participant_id = participant_info.participant_id
     session_id = participant_info.session_id
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = RAW_BEH_DIR / participant_id / session_id / run_id
-    output_dir.mkdir(parents=True, exist_ok=True)
-    write_participant_info(output_dir, participant_info, run_id)
+    temp_root = None
+    if persist_outputs:
+        output_dir = RAW_BEH_DIR / participant_id / session_id / run_id
+        output_dir.mkdir(parents=True, exist_ok=True)
+        write_participant_info(output_dir, participant_info, run_id)
+    else:
+        temp_root = Path(
+            tempfile.mkdtemp(prefix="code_exp_test_", dir=tempfile.gettempdir())
+        )
+        output_dir = temp_root / participant_id / session_id / run_id
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     return ExperimentContext(
         participant_id=participant_id,
@@ -74,6 +87,8 @@ def build_context(
         run_id=run_id,
         output_dir=output_dir,
         participant_info=participant_info,
+        persist_outputs=persist_outputs,
+        temp_root=temp_root,
         trigger=get_trigger(
             TRIGGER_MODE,
             port=TRIGGER_PORT,
@@ -110,3 +125,9 @@ def build_context(
             ),
         ),
     )
+
+
+def cleanup_context(context: ExperimentContext) -> None:
+    if context.temp_root is None:
+        return
+    shutil.rmtree(context.temp_root, ignore_errors=True)

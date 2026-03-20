@@ -14,6 +14,14 @@ TRIGGER_RESET_CODE = 0
 TRIGGER_SERIAL_ENCODING = "byte"
 TRIGGER_SERIAL_TERMINATOR = b""
 
+# PsychoPy window settings
+PSYCHOPY_MONITOR_NAME = "testMonitor"
+REST_FULLSCREEN = True
+MENTAL_ARITHMETIC_FULLSCREEN = True
+LEARNING_CYCLE_FULLSCREEN = True
+WM_PRETEST_MACOS_WINDOWED = False
+WM_PRETEST_SKIP_FRAME_RATE_CHECK = True
+
 # EyeLink settings
 # If EYELINK_BACKEND == "relay", start `python3.9 eeg/eyelink_relay_server.py`
 # in a separate Python 3.9 environment before running the main experiment.

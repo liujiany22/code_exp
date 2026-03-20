@@ -8,7 +8,12 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from common.data_io import ExperimentContext
-from common.psychopy_compat import configure_macos_psychopy_runtime
+from common.psychopy_compat import (
+    build_window_kwargs,
+    create_visual_window,
+    configure_macos_psychopy_runtime,
+    safe_close_window,
+)
 from config.event_codes import MENTAL_ARITHMETIC
 from config.settings import (
     MENTAL_ARITHMETIC_ALLOW_GUI,
@@ -29,6 +34,7 @@ from config.settings import (
     MENTAL_ARITHMETIC_TRIALS_PER_BLOCK,
     MENTAL_ARITHMETIC_TRIALS_PER_LEVEL,
     MENTAL_ARITHMETIC_WINDOW_SIZE,
+    PSYCHOPY_MONITOR_NAME,
 )
 
 EXPECTED_DIFFICULTY_LEVELS = ("QE", "QM", "QH")
@@ -408,6 +414,10 @@ class MentalArithmeticTask:
         self.probe_stim = None
         self.summary_stim = None
         self.break_stim = None
+        self.response_hint_rect = None
+        self.response_hint_left = None
+        self.response_hint_right = None
+        self.response_hint_divider = None
         self.mouse = None
         self.core = None
         self.event = None
@@ -453,7 +463,7 @@ class MentalArithmeticTask:
             task_error = exc
         finally:
             if self.window is not None:
-                self.window.close()
+                safe_close_window(self.window)
             self.logger.write_outputs(output_dir)
             self._write_generated_problems(generated_path)
             self._write_config_snapshot(config_path)
@@ -476,13 +486,17 @@ class MentalArithmeticTask:
         self.core = core
         self.event = event
         self.visual = visual
-        self.window = visual.Window(
-            size=self.config.window_size,
-            fullscr=self.config.fullscreen,
-            color=self.config.background_color,
-            colorSpace="named",
-            units="height",
-            allowGUI=self.config.allow_gui,
+        self.window = create_visual_window(
+            visual,
+            **build_window_kwargs(
+                size=self.config.window_size,
+                fullscr=self.config.fullscreen,
+                monitor=PSYCHOPY_MONITOR_NAME,
+                color=self.config.background_color,
+                color_space="named",
+                units="height",
+                allow_gui=self.config.allow_gui,
+            ),
         )
         self._force_mouse_visible()
         self.global_clock = core.Clock()
@@ -514,7 +528,7 @@ class MentalArithmeticTask:
             color=self.config.probe_color,
             colorSpace="named",
             height=0.07,
-            pos=(0, -0.12),
+            pos=(0, -0.08),
         )
         self.summary_stim = visual.TextStim(
             win=self.window,
@@ -532,6 +546,42 @@ class MentalArithmeticTask:
             color=self.config.text_color,
             colorSpace="named",
             height=0.09,
+        )
+        self.response_hint_rect = visual.Rect(
+            win=self.window,
+            width=0.62,
+            height=0.11,
+            pos=(0, -0.24),
+            lineColor="white",
+            fillColor="#1a1a1a",
+            colorSpace="named",
+        )
+        self.response_hint_divider = visual.Rect(
+            win=self.window,
+            width=0.003,
+            height=0.085,
+            pos=(0, -0.24),
+            lineColor="white",
+            fillColor="white",
+            colorSpace="named",
+        )
+        self.response_hint_left = visual.TextStim(
+            win=self.window,
+            text="左键 相等",
+            font=self.config.font,
+            color="white",
+            colorSpace="named",
+            height=0.04,
+            pos=(-0.16, -0.24),
+        )
+        self.response_hint_right = visual.TextStim(
+            win=self.window,
+            text="右键 不相等",
+            font=self.config.font,
+            color="white",
+            colorSpace="named",
+            height=0.04,
+            pos=(0.16, -0.24),
         )
 
     def _build_blocks(self) -> list[list[ArithmeticProblem]]:
@@ -743,12 +793,15 @@ class MentalArithmeticTask:
             f"Block {block_number} / {len(self.blocks)}\n"
             f"Trial {block_trial_number} / {self.config.trials_per_block}"
         )
-        self.subtitle_stim.text = "蓝色数字若等于正确答案，请按左键；若不等，请按右键。"
+        self.subtitle_stim.text = ""
         self.probe_stim.text = str(problem.probe_answer)
 
         self.title_stim.draw()
-        self.subtitle_stim.draw()
         self.probe_stim.draw()
+        self.response_hint_rect.draw()
+        self.response_hint_divider.draw()
+        self.response_hint_left.draw()
+        self.response_hint_right.draw()
         self.window.flip()
 
         rt_clock = self.core.Clock()
@@ -768,8 +821,11 @@ class MentalArithmeticTask:
                 return "", None
 
             self.title_stim.draw()
-            self.subtitle_stim.draw()
             self.probe_stim.draw()
+            self.response_hint_rect.draw()
+            self.response_hint_divider.draw()
+            self.response_hint_left.draw()
+            self.response_hint_right.draw()
             self.window.flip()
 
     def _show_timed_rest(self, completed_block_number: int) -> None:

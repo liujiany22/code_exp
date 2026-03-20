@@ -7,10 +7,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from common.data_io import ExperimentContext
-from common.psychopy_compat import configure_macos_psychopy_runtime
+from common.psychopy_compat import (
+    build_window_kwargs,
+    create_visual_window,
+    configure_macos_psychopy_runtime,
+    safe_close_window,
+)
 from config.event_codes import RESTING_STATE
 from config.settings import (
     DEFAULT_TRIGGER_WIDTH_MS,
+    PSYCHOPY_MONITOR_NAME,
     REST_ALLOW_GUI,
     REST_BACKGROUND_COLOR,
     REST_CYCLE_COUNT,
@@ -154,7 +160,7 @@ class RestingStateTask:
             task_error = exc
         finally:
             if self.window is not None:
-                self.window.close()
+                safe_close_window(self.window)
             _write_log(output_path, log_rows)
 
         if task_error is not None:
@@ -176,13 +182,17 @@ class RestingStateTask:
         self.event = event
         self.sound = sound
         self.visual = visual
-        self.window = visual.Window(
-            size=self.config.window_size,
-            fullscr=self.config.fullscreen,
-            color=self.config.background_color,
-            colorSpace="named",
-            units="height",
-            allowGUI=self.config.allow_gui,
+        self.window = create_visual_window(
+            visual,
+            **build_window_kwargs(
+                size=self.config.window_size,
+                fullscr=self.config.fullscreen,
+                monitor=PSYCHOPY_MONITOR_NAME,
+                color=self.config.background_color,
+                color_space="named",
+                units="height",
+                allow_gui=self.config.allow_gui,
+            ),
         )
         self.title_stim = visual.TextStim(
             win=self.window,

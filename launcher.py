@@ -5,10 +5,6 @@ import argparse
 from common.participant_info import collect_participant_info
 from config.settings import (
     LEARNING_CYCLE_INTER_TRIAL_REST_SECONDS,
-    LEARNING_CYCLE_TEST_EXPECTED_TRIALS,
-    LEARNING_CYCLE_TEST_MISSING_VIDEO_SECONDS,
-    LEARNING_CYCLE_TEST_POST_PHASE_BLANK_SECONDS,
-    LEARNING_CYCLE_TEST_TRIALS_FILE,
     MENTAL_ARITHMETIC_TEST_BLOCK_COUNT,
     MENTAL_ARITHMETIC_TEST_BLOCK_REST_SECONDS,
     MENTAL_ARITHMETIC_TEST_FIXATION_SECONDS,
@@ -23,11 +19,11 @@ from config.settings import (
     WM_PRETEST_TEST_TASK_TIMEOUT_SECONDS,
     ensure_directories,
 )
-from common.data_io import build_context
+from common.data_io import build_context, cleanup_context
 from tasks import DEFAULT_TASK_SLUG, TASK_MAP, TASK_REGISTRY
 from tasks.learning_cycle.task import LearningCycleConfig
 from tasks.mental_arithmetic.task import MentalArithmeticConfig
-from tasks.protocol.task import ProtocolConfig
+from tasks.protocol.task import ProtocolConfig, TEST_STAGE_CHOICES
 from tasks.resting_state.task import RestingStateConfig
 from tasks.wm_pretest.task import WMPretestConfig
 
@@ -170,26 +166,8 @@ def _build_mental_arithmetic_config(
 
 def _build_learning_cycle_config(args: argparse.Namespace) -> LearningCycleConfig:
     default_config = LearningCycleConfig()
-    default_trials_file = (
-        LEARNING_CYCLE_TEST_TRIALS_FILE if args.test_mode else default_config.trials_file
-    )
-    default_expected_trials = (
-        LEARNING_CYCLE_TEST_EXPECTED_TRIALS
-        if args.test_mode
-        else default_config.expected_trials
-    )
-    default_missing_video_seconds = (
-        LEARNING_CYCLE_TEST_MISSING_VIDEO_SECONDS
-        if args.test_mode
-        else default_config.missing_video_seconds
-    )
-    default_post_phase_blank_seconds = (
-        LEARNING_CYCLE_TEST_POST_PHASE_BLANK_SECONDS
-        if args.test_mode
-        else default_config.post_phase_blank_seconds
-    )
     return LearningCycleConfig(
-        trials_file=default_trials_file if args.lc_trials_file is None else args.lc_trials_file,
+        trials_file=default_config.trials_file if args.lc_trials_file is None else args.lc_trials_file,
         questionnaire_dir=default_config.questionnaire_dir,
         fullscreen=False if args.lc_windowed else default_config.fullscreen,
         allow_gui=False if args.lc_no_gui else default_config.allow_gui,
@@ -198,16 +176,17 @@ def _build_learning_cycle_config(args: argparse.Namespace) -> LearningCycleConfi
         background_color=default_config.background_color,
         text_color=default_config.text_color,
         font=default_config.font,
-        expected_trials=default_expected_trials,
+        expected_trials=default_config.expected_trials,
         missing_video_seconds=(
-            default_missing_video_seconds
+            default_config.missing_video_seconds
             if args.lc_missing_video_seconds is None
             else args.lc_missing_video_seconds
         ),
-        post_phase_blank_seconds=default_post_phase_blank_seconds,
-        inter_trial_rest_seconds=(
-            0.0 if args.test_mode else LEARNING_CYCLE_INTER_TRIAL_REST_SECONDS
-        ),
+        post_phase_blank_seconds=default_config.post_phase_blank_seconds,
+        statement_seconds=default_config.statement_seconds,
+        response_seconds=default_config.response_seconds,
+        question_rest_seconds=default_config.question_rest_seconds,
+        inter_trial_rest_seconds=LEARNING_CYCLE_INTER_TRIAL_REST_SECONDS,
         counterbalance_row=args.lc_counterbalance_row,
         auto_advance=args.auto_advance,
     )
@@ -216,6 +195,7 @@ def _build_learning_cycle_config(args: argparse.Namespace) -> LearningCycleConfi
 def _build_protocol_config(args: argparse.Namespace) -> ProtocolConfig:
     return ProtocolConfig(
         test_mode=args.test_mode,
+        test_stage=args.test_stage,
         auto_advance=args.auto_advance,
     )
 
@@ -282,6 +262,12 @@ def main() -> None:
         "--test-mode",
         action="store_true",
         help="Greatly shrink all tasks for end-to-end testing",
+    )
+    parser.add_argument(
+        "--test-stage",
+        choices=TEST_STAGE_CHOICES,
+        default=None,
+        help="When used with --test-mode, run only one formal stage of the protocol",
     )
     parser.add_argument(
         "--eyes-open",
@@ -404,6 +390,11 @@ def main() -> None:
             print()
             return
 
+        if args.test_stage and not args.test_mode:
+            parser.error("--test-stage 只能与 --test-mode 一起使用。")
+        if args.test_stage and args.task not in (None, "all", "protocol"):
+            parser.error("--test-stage 仅适用于默认 protocol / --task protocol。")
+
         task_sequence = _resolve_task_sequence(args.task)
         participant_info = collect_participant_info(
             participant_id=args.participant,
@@ -415,6 +406,7 @@ def main() -> None:
 
         context = build_context(
             participant_info=participant_info,
+            persist_outputs=not args.test_mode,
         )
 
         print(
@@ -426,7 +418,12 @@ def main() -> None:
         )
 
         if args.test_mode:
-            print("Test mode enabled: using shortened task settings.")
+            if args.test_stage:
+                print(
+                    "Test mode enabled: running only one formal stage, shrinking task scale where applicable, and discarding outputs."
+                )
+            else:
+                print("Test mode enabled: skipping practice, shrinking formal tasks, and discarding outputs.")
 
         for task_name in task_sequence:
             print(f"Running task: {task_name}")
@@ -440,6 +437,7 @@ def main() -> None:
     finally:
         if context is not None:
             context.trigger.close()
+            cleanup_context(context)
 
 
 if __name__ == "__main__":

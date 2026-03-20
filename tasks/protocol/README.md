@@ -19,8 +19,16 @@ For a shortened dry run:
 python code_exp/launcher.py --participant test --session 001 --test-mode --auto-advance
 ```
 
+To inspect only one formal stage in test mode:
+
+```bash
+python code_exp/launcher.py --test-mode --test-stage resting_state --auto-advance
+python code_exp/launcher.py --test-mode --test-stage learning_cycle --auto-advance
+```
+
 ## Notes
 
 - The protocol currently keeps several guidance screens as placeholders, matching the requested workflow.
+- Digit span and Corsi blocks now run without separate intro screens.
 - Practice digit span and Corsi demos use pilot mode plus a wrapper-level timeout.
 - Formal learning-cycle execution currently runs as two groups with a configurable inter-group rest.

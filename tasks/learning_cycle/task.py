@@ -2,12 +2,19 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import sys
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from common.data_io import ExperimentContext
-from common.psychopy_compat import configure_macos_psychopy_runtime
+from common.psychopy_compat import (
+    build_window_kwargs,
+    create_visual_window,
+    configure_macos_psychopy_runtime,
+    safe_close_window,
+)
 from config.event_codes import LEARNING_CYCLE
 from config.settings import (
     DEFAULT_TRIGGER_WIDTH_MS,
@@ -21,9 +28,13 @@ from config.settings import (
     LEARNING_CYCLE_MISSING_VIDEO_SECONDS,
     LEARNING_CYCLE_POST_PHASE_BLANK_SECONDS,
     LEARNING_CYCLE_QUESTIONNAIRE_DIR,
+    LEARNING_CYCLE_QUESTION_REST_SECONDS,
+    LEARNING_CYCLE_RESPONSE_SECONDS,
+    LEARNING_CYCLE_STATEMENT_SECONDS,
     LEARNING_CYCLE_TEXT_COLOR,
     LEARNING_CYCLE_TRIALS_FILE,
     LEARNING_CYCLE_WINDOW_SIZE,
+    PSYCHOPY_MONITOR_NAME,
     VIDEO_DIR,
 )
 
@@ -48,6 +59,39 @@ class LearningTrialSpec:
 class QuestionnaireOutcome:
     status: str
     form_file: str
+
+
+@dataclass(frozen=True)
+class QuestionnaireItem:
+    item_number: int
+    question_text: str
+    correct_answer: str
+    question_type: str
+
+
+@dataclass(frozen=True)
+class QuestionnaireResponseRow:
+    TrialNumber: int
+    ItemId: str
+    PhaseName: str
+    FormFile: str
+    ItemNumber: int
+    QuestionType: str
+    QuestionText: str
+    CorrectAnswer: str
+    ParticipantAnswer: str
+    IsCorrect: int
+    ResponseTime: str
+
+
+@dataclass(frozen=True)
+class RecallResponseRow:
+    TrialNumber: int
+    ItemId: str
+    PhaseName: str
+    MaterialLabel: str
+    PromptText: str
+    DurationSeconds: str
 
 
 @dataclass(frozen=True)
@@ -83,6 +127,9 @@ class LearningCycleConfig:
     expected_trials: int = LEARNING_CYCLE_EXPECTED_TRIALS
     missing_video_seconds: float = LEARNING_CYCLE_MISSING_VIDEO_SECONDS
     post_phase_blank_seconds: float = LEARNING_CYCLE_POST_PHASE_BLANK_SECONDS
+    statement_seconds: float = LEARNING_CYCLE_STATEMENT_SECONDS
+    response_seconds: float = LEARNING_CYCLE_RESPONSE_SECONDS
+    question_rest_seconds: float = LEARNING_CYCLE_QUESTION_REST_SECONDS
     inter_trial_rest_seconds: float = LEARNING_CYCLE_INTER_TRIAL_REST_SECONDS
     counterbalance_row: int | None = None
     auto_advance: bool = False
@@ -99,6 +146,12 @@ class LearningCycleConfig:
             raise ValueError("missing_video_seconds must be non-negative.")
         if self.post_phase_blank_seconds < 0:
             raise ValueError("post_phase_blank_seconds must be non-negative.")
+        if self.statement_seconds < 0:
+            raise ValueError("statement_seconds must be non-negative.")
+        if self.response_seconds < 0:
+            raise ValueError("response_seconds must be non-negative.")
+        if self.question_rest_seconds < 0:
+            raise ValueError("question_rest_seconds must be non-negative.")
         if self.inter_trial_rest_seconds < 0:
             raise ValueError("inter_trial_rest_seconds must be non-negative.")
         if len(self.window_size) != 2 or any(size <= 0 for size in self.window_size):
@@ -145,6 +198,27 @@ class TrialOrderBuilder:
 
 
 class TrialLogger:
+    RECALL_FIELDS = (
+        "TrialNumber",
+        "ItemId",
+        "PhaseName",
+        "MaterialLabel",
+        "PromptText",
+        "DurationSeconds",
+    )
+    QUESTIONNAIRE_FIELDS = (
+        "TrialNumber",
+        "ItemId",
+        "PhaseName",
+        "FormFile",
+        "ItemNumber",
+        "QuestionType",
+        "QuestionText",
+        "CorrectAnswer",
+        "ParticipantAnswer",
+        "IsCorrect",
+        "ResponseTime",
+    )
     TRIAL_FIELDS = (
         "TrialNumber",
         "ItemId",
@@ -176,9 +250,17 @@ class TrialLogger:
     def __init__(self) -> None:
         self.trial_rows: list[dict[str, object]] = []
         self.event_rows: list[dict[str, object]] = []
+        self.questionnaire_rows: list[dict[str, object]] = []
+        self.recall_rows: list[dict[str, object]] = []
 
     def log_trial(self, row: LearningTrialLogRow) -> None:
         self.trial_rows.append(asdict(row))
+
+    def log_questionnaire_response(self, row: QuestionnaireResponseRow) -> None:
+        self.questionnaire_rows.append(asdict(row))
+
+    def log_recall_response(self, row: RecallResponseRow) -> None:
+        self.recall_rows.append(asdict(row))
 
     def log_event(
         self,
@@ -207,6 +289,16 @@ class TrialLogger:
             output_dir / "learning_cycle_trial_log.csv",
             self.TRIAL_FIELDS,
             self.trial_rows,
+        )
+        self._write_csv(
+            output_dir / "learning_cycle_questionnaire_responses.csv",
+            self.QUESTIONNAIRE_FIELDS,
+            self.questionnaire_rows,
+        )
+        self._write_csv(
+            output_dir / "learning_cycle_recall_responses.csv",
+            self.RECALL_FIELDS,
+            self.recall_rows,
         )
         self._write_csv(
             output_dir / "learning_cycle_events.csv",
@@ -269,7 +361,7 @@ class LearningCycleTask:
             task_error = exc
         finally:
             if self.window is not None:
-                self.window.close()
+                safe_close_window(self.window)
             self.logger.write_outputs(output_dir)
             self._write_order_snapshot(order_path)
             self._write_config_snapshot(config_path)
@@ -292,13 +384,17 @@ class LearningCycleTask:
         self.core = core
         self.event = event
         self.visual = visual
-        self.window = visual.Window(
-            size=self.config.window_size,
-            fullscr=self.config.fullscreen,
-            color=self.config.background_color,
-            colorSpace="named",
-            units="height",
-            allowGUI=self.config.allow_gui,
+        self.window = create_visual_window(
+            visual,
+            **build_window_kwargs(
+                size=self.config.window_size,
+                fullscr=self.config.fullscreen,
+                monitor=PSYCHOPY_MONITOR_NAME,
+                color=self.config.background_color,
+                color_space="named",
+                units="height",
+                allow_gui=self.config.allow_gui,
+            ),
         )
         self._force_mouse_visible()
         self.global_clock = core.Clock()
@@ -485,14 +581,14 @@ class LearningCycleTask:
             main_text=(
                 "视频学习任务\n\n"
                 f"共 {len(self.ordered_trials)} 个试次。\n"
-                "每个试次依次包括：前测问卷、视频播放、主观量表、后测接口。\n"
-                "请根据屏幕提示完成各阶段。"
+                "每个试次都包含前测、视频播放和后测。\n"
+                "前测和后测都由小测题目与复述任务两部分组成。"
             ),
             subtitle_text=(
-                "视频开始和结束会记录 EEG 事件。"
-                " 当前顺序已按被试编号自动分配平衡顺序。"
+                "实验中会为您播放一段视频。您需要先完成基于该视频内容的小测，再谈谈您对视频内容的了解。\n"
+                "然后，请您观看这段视频，根据观看过程中学习到的知识，再次完成小测题目和复述任务。"
             ),
-            detail_text="按空格开始，Esc 中止。",
+            detail_text="视频开始和结束会记录 EEG 事件。按空格开始，Esc 中止。",
         )
 
     def _run_trial(self, trial_number: int, trial: LearningTrialSpec) -> None:
@@ -504,8 +600,7 @@ class LearningCycleTask:
             form_file=trial.pretest_form,
             prompt_title="前测知识问卷",
             prompt_body=(
-                "这里预留给后续接入选择题、判断题或填空题。\n"
-                "当前版本只负责记录试次、表单引用和阶段完成状态。"
+                "请先完成基于该视频内容的小测，然后进行复述任务。"
             ),
         )
 
@@ -533,10 +628,9 @@ class LearningCycleTask:
             phase_name="posttest",
             event_code=LEARNING_CYCLE["posttest_start"],
             form_file=trial.posttest_form,
-            prompt_title="后测表现接口",
+            prompt_title="后测测验",
             prompt_body=(
-                "这里预留给后续接入视频后的表现测验或认真作答检查。\n"
-                "当前版本只保留接口和完成确认。"
+                "请根据刚刚观看的视频内容再次完成小测，然后进行复述任务。"
             ),
         )
 
@@ -585,22 +679,325 @@ class LearningCycleTask:
             detail=resolved_form,
         )
 
-        self._wait_for_space(
-            main_text=(
-                f"{prompt_title}\n\n"
-                f"Trial {trial_number} / {len(self.ordered_trials)}\n"
-                f"主题: {trial.topic}\n"
-                f"负荷等级: {trial.load_level}"
-            ),
-            subtitle_text=prompt_body,
-            detail_text=(
-                f"表单接口: {resolved_form}\n"
-                "完成该阶段后按空格继续。"
-            ),
-        )
+        questionnaire_items = self._load_questionnaire_items(resolved_form)
+        include_recall = phase_name in {"pretest", "posttest"}
+        if questionnaire_items:
+            self._wait_for_space(
+                main_text=(
+                    f"{prompt_title}\n\n"
+                    f"Trial {trial_number} / {len(self.ordered_trials)}\n"
+                    f"主题: {trial.topic}\n"
+                    f"负荷等级: {trial.load_level}"
+                ),
+                subtitle_text=prompt_body,
+                detail_text=(
+                    "小测部分使用 F=对，J=错。\n"
+                    f"每题流程：陈述 {self._format_seconds(self.config.statement_seconds)} + "
+                    f"作答 {self._format_seconds(self.config.response_seconds)} + "
+                    f"间隔 {self._format_seconds(self.config.question_rest_seconds)}。按空格开始。"
+                ),
+            )
+            self._run_true_false_questionnaire(
+                trial_number=trial_number,
+                trial=trial,
+                phase_name=phase_name,
+                form_file=resolved_form,
+                items=questionnaire_items,
+            )
+            questionnaire_status = "form_completed"
+        else:
+            self._wait_for_space(
+                main_text=(
+                    f"{prompt_title}\n\n"
+                    f"Trial {trial_number} / {len(self.ordered_trials)}\n"
+                    f"主题: {trial.topic}\n"
+                    f"负荷等级: {trial.load_level}"
+                ),
+                subtitle_text=prompt_body,
+                detail_text=(
+                    f"表单接口: {resolved_form}\n"
+                    "完成该阶段后按空格继续。"
+                ),
+            )
+            questionnaire_status = "placeholder_completed"
+
+        recall_status = "not_applicable"
+        if include_recall:
+            recall_status = self._run_recall_phase(
+                trial_number=trial_number,
+                trial=trial,
+                phase_name=phase_name,
+            )
 
         self._show_blank(self.config.post_phase_blank_seconds)
-        return QuestionnaireOutcome(status="placeholder_completed", form_file=resolved_form)
+        combined_status = questionnaire_status
+        if include_recall:
+            combined_status = f"{questionnaire_status}+{recall_status}"
+        return QuestionnaireOutcome(status=combined_status, form_file=resolved_form)
+
+    def _load_questionnaire_items(self, resolved_form: str) -> list[QuestionnaireItem]:
+        if not resolved_form:
+            return []
+
+        form_path = Path(resolved_form)
+        if not form_path.exists() or form_path.suffix.lower() != ".csv":
+            return []
+
+        with form_path.open("r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            required_columns = {"item_number", "question_text", "correct_answer"}
+            missing = required_columns - set(reader.fieldnames or [])
+            if missing:
+                raise ValueError(
+                    f"Questionnaire file is missing columns {sorted(missing)}: {form_path}"
+                )
+
+            items: list[QuestionnaireItem] = []
+            for raw_row in reader:
+                question_text = raw_row["question_text"].strip()
+                if not question_text:
+                    continue
+
+                items.append(
+                    QuestionnaireItem(
+                        item_number=int(raw_row["item_number"]),
+                        question_text=question_text,
+                        correct_answer=self._normalize_true_false_answer(
+                            raw_row["correct_answer"]
+                        ),
+                        question_type=raw_row.get("question_type", "true_false").strip()
+                        or "true_false",
+                    )
+                )
+
+        for item in items:
+            if item.question_type != "true_false":
+                raise ValueError(
+                    f"Unsupported questionnaire item type '{item.question_type}' in {form_path}"
+                )
+
+        return sorted(items, key=lambda item: item.item_number)
+
+    @staticmethod
+    def _normalize_true_false_answer(raw_answer: str) -> str:
+        normalized = raw_answer.strip().lower()
+        if normalized in {"对", "true", "t", "yes", "y", "1"}:
+            return "true"
+        if normalized in {"错", "false", "f", "no", "n", "0"}:
+            return "false"
+        raise ValueError(f"Unsupported true/false answer value: {raw_answer}")
+
+    def _run_true_false_questionnaire(
+        self,
+        trial_number: int,
+        trial: LearningTrialSpec,
+        phase_name: str,
+        form_file: str,
+        items: list[QuestionnaireItem],
+    ) -> None:
+        for item in items:
+            self._show_question_statement(
+                trial_number=trial_number,
+                trial=trial,
+                phase_name=phase_name,
+                item=item,
+                total_items=len(items),
+            )
+            participant_answer, response_time = self._collect_true_false_response(
+                trial_number=trial_number,
+                trial=trial,
+                phase_name=phase_name,
+                item=item,
+                total_items=len(items),
+            )
+            self.logger.log_questionnaire_response(
+                QuestionnaireResponseRow(
+                    TrialNumber=trial_number,
+                    ItemId=trial.item_id,
+                    PhaseName=phase_name,
+                    FormFile=form_file,
+                    ItemNumber=item.item_number,
+                    QuestionType=item.question_type,
+                    QuestionText=item.question_text,
+                    CorrectAnswer=item.correct_answer,
+                    ParticipantAnswer=participant_answer,
+                    IsCorrect=int(participant_answer == item.correct_answer),
+                    ResponseTime=f"{response_time:.6f}",
+                )
+            )
+            self._show_blank(self.config.question_rest_seconds)
+
+    def _show_question_statement(
+        self,
+        trial_number: int,
+        trial: LearningTrialSpec,
+        phase_name: str,
+        item: QuestionnaireItem,
+        total_items: int,
+    ) -> None:
+        if self.config.statement_seconds <= 0:
+            return
+
+        statement_clock = self.core.Clock()
+        phase_label = {
+            "pretest": "前测",
+            "rating": "主观量表",
+            "posttest": "后测",
+        }.get(phase_name, phase_name)
+        self.event.clearEvents()
+
+        while statement_clock.getTime() < self.config.statement_seconds:
+            self._ensure_escape_not_pressed()
+            self._draw_text_page(
+                main_text=(
+                    f"{phase_label}题目 {item.item_number} / {total_items}\n\n"
+                    f"{item.question_text}"
+                ),
+                subtitle_text=(
+                    f"Trial {trial_number} / {len(self.ordered_trials)}   "
+                    f"主题: {trial.topic}"
+                ),
+                detail_text="请阅读陈述。",
+            )
+            self.window.flip()
+
+    def _collect_true_false_response(
+        self,
+        trial_number: int,
+        trial: LearningTrialSpec,
+        phase_name: str,
+        item: QuestionnaireItem,
+        total_items: int,
+    ) -> tuple[str, float]:
+        if self.config.response_seconds <= 0:
+            return "", 0.0
+
+        response_clock = self.core.Clock()
+        self.event.clearEvents()
+        phase_label = {
+            "pretest": "前测",
+            "rating": "主观量表",
+            "posttest": "后测",
+        }.get(phase_name, phase_name)
+
+        while True:
+            keys = self.event.getKeys(keyList=["f", "j", "escape"], timeStamped=response_clock)
+            for key, response_time in keys:
+                if key == "escape":
+                    raise TaskAborted("Experiment aborted by user.")
+                if key == "f":
+                    return "true", response_time
+                if key == "j":
+                    return "false", response_time
+            if (
+                self.config.response_seconds > 0
+                and response_clock.getTime() >= self.config.response_seconds
+            ):
+                return "", self.config.response_seconds
+
+            self._draw_text_page(
+                main_text=(
+                    f"{phase_label}题目 {item.item_number} / {total_items}\n\n"
+                    f"{item.question_text}"
+                ),
+                subtitle_text=(
+                    f"Trial {trial_number} / {len(self.ordered_trials)}   "
+                    f"主题: {trial.topic}"
+                ),
+                detail_text="F = 对    J = 错",
+            )
+            self.window.flip()
+
+    def _run_recall_phase(
+        self,
+        trial_number: int,
+        trial: LearningTrialSpec,
+        phase_name: str,
+    ) -> str:
+        material_label = trial.topic
+        prompt_text = self._recall_prompt_text(phase_name, material_label)
+
+        self._wait_for_space(
+            main_text="复述任务",
+            subtitle_text=prompt_text,
+            detail_text="请按空格后开始描述。如果不了解，可报告不了解。",
+        )
+
+        duration_seconds = self._run_recall_recording_prompt(
+            phase_name=phase_name,
+            material_label=material_label,
+        )
+        self.logger.log_recall_response(
+            RecallResponseRow(
+                TrialNumber=trial_number,
+                ItemId=trial.item_id,
+                PhaseName=phase_name,
+                MaterialLabel=material_label,
+                PromptText=prompt_text,
+                DurationSeconds=f"{duration_seconds:.6f}",
+            )
+        )
+        return "recall_completed"
+
+    @staticmethod
+    def _recall_prompt_text(phase_name: str, material_label: str) -> str:
+        if phase_name == "pretest":
+            return (
+                f"请你描述你对待播视频已知的内容。\n"
+                f"素材为：{material_label}。"
+            )
+        if phase_name == "posttest":
+            return (
+                f"请你描述你对刚刚视频内容的理解。\n"
+                f"素材为：{material_label}。"
+            )
+        return f"请你描述你对该材料的理解。\n素材为：{material_label}。"
+
+    @staticmethod
+    def _format_seconds(seconds: float) -> str:
+        value = float(seconds)
+        if value.is_integer():
+            return f"{int(value)} 秒"
+        return f"{value:.1f} 秒"
+
+    def _run_recall_recording_prompt(
+        self,
+        phase_name: str,
+        material_label: str,
+    ) -> float:
+        recall_clock = self.core.Clock()
+        self.event.clearEvents()
+        phase_label = {
+            "pretest": "前测",
+            "posttest": "后测",
+        }.get(phase_name, phase_name)
+
+        if self.config.auto_advance:
+            self._draw_text_page(
+                main_text=f"{phase_label}复述中",
+                subtitle_text=f"素材：{material_label}",
+                detail_text="自动模式：已跳过口头复述。",
+            )
+            self.window.flip()
+            self.core.wait(0.1)
+            return 0.0
+
+        while True:
+            keys = self.event.getKeys(keyList=["space", "return", "escape"])
+            if "escape" in keys:
+                raise TaskAborted("Experiment aborted by user.")
+            if "space" in keys or "return" in keys:
+                return recall_clock.getTime()
+
+            self._draw_text_page(
+                main_text=f"{phase_label}复述中",
+                subtitle_text=(
+                    f"素材：{material_label}\n"
+                    "请开始口头描述。"
+                ),
+                detail_text="完成描述后按空格继续。",
+            )
+            self.window.flip()
 
     def _run_video_phase(
         self,
@@ -623,9 +1020,28 @@ class LearningCycleTask:
         )
 
         if Path(video_path).exists():
-            status, elapsed_seconds = self._play_video_file(video_path)
+            try:
+                status, elapsed_seconds = self._play_video_file(video_path)
+            except TaskAborted:
+                raise
+            except Exception as exc:
+                error_detail = self._summarize_video_error(exc)
+                elapsed_seconds = self._run_missing_video_placeholder(
+                    trial_number,
+                    trial,
+                    video_path,
+                    reason_text=(
+                        "当前设备无法正常创建视频播放后端，已切换为占位播放以继续联调。\n"
+                        f"失败原因：{error_detail}"
+                    ),
+                )
+                status = "placeholder_unplayable_video"
         else:
-            elapsed_seconds = self._run_missing_video_placeholder(trial_number, trial, video_path)
+            elapsed_seconds = self._run_missing_video_placeholder(
+                trial_number,
+                trial,
+                video_path,
+            )
             status = "placeholder_missing_video"
 
         end_record = self.context.trigger.emit(
@@ -646,33 +1062,111 @@ class LearningCycleTask:
         return status, elapsed_seconds
 
     def _play_video_file(self, video_path: str) -> tuple[str, float]:
-        movie_stim = self._build_movie_stim(video_path)
+        movie_stim = None
         playback_clock = self.core.Clock()
         self.event.clearEvents()
 
-        while True:
-            self._ensure_escape_not_pressed()
-            movie_stim.draw()
-            self.window.flip()
-            if self._movie_finished(movie_stim):
-                break
+        try:
+            with self._suppress_movie_backend_stderr():
+                movie_stim, status = self._build_movie_stim(video_path)
+                while True:
+                    self._ensure_escape_not_pressed()
+                    movie_stim.draw()
+                    self.window.flip()
+                    if self._movie_finished(movie_stim):
+                        break
+        finally:
+            self._safe_close_movie_stim(movie_stim)
 
-        return "played", playback_clock.getTime()
+        return status, playback_clock.getTime()
 
     def _build_movie_stim(self, video_path: str):
         errors: list[str] = []
-        for class_name in ("MovieStim", "MovieStim3"):
-            stim_class = getattr(self.visual, class_name, None)
-            if stim_class is None:
-                continue
+        for status, backend_name, factory in self._movie_stim_attempts(video_path):
             try:
-                return stim_class(self.window, filename=video_path)
+                return factory(), status
             except Exception as exc:  # pragma: no cover - depends on local video backend
-                errors.append(f"{class_name}: {exc}")
+                errors.append(f"{backend_name}: {self._summarize_video_error(exc)}")
 
         raise RuntimeError(
             "Unable to create a PsychoPy movie stimulus. "
             f"Tried MovieStim backends for: {video_path}. Errors: {errors}"
+        )
+
+    def _movie_stim_attempts(self, video_path: str):
+        attempts: list[tuple[str, str, object]] = []
+        if sys.platform == "darwin":
+            attempts.append(
+                (
+                    "played_vlc",
+                    "VlcMovieStim(audio)",
+                    lambda: self._create_vlc_movie_stim(video_path, no_audio=False),
+                )
+            )
+
+        attempts.append(
+            (
+                "played_ffpyplayer",
+                "MovieStim(ffpyplayer+audio)",
+                lambda: self._create_ffpyplayer_movie_stim(video_path, no_audio=False),
+            )
+        )
+
+        if self._allow_silent_video_fallback():
+            if sys.platform == "darwin":
+                attempts.append(
+                    (
+                        "played_vlc_silent",
+                        "VlcMovieStim(silent)",
+                        lambda: self._create_vlc_movie_stim(video_path, no_audio=True),
+                    )
+                )
+            attempts.append(
+                (
+                    "played_ffpyplayer_silent",
+                    "MovieStim(ffpyplayer+silent)",
+                    lambda: self._create_ffpyplayer_movie_stim(video_path, no_audio=True),
+                )
+            )
+
+        return attempts
+
+    def _allow_silent_video_fallback(self) -> bool:
+        return True
+
+    def _create_ffpyplayer_movie_stim(self, video_path: str, no_audio: bool):
+        stim_class = getattr(self.visual, "MovieStim", None)
+        if stim_class is None:
+            raise RuntimeError("PsychoPy MovieStim is not available in this environment.")
+        if no_audio:
+            movie_stim = stim_class(
+                self.window,
+                filename="",
+                movieLib="ffpyplayer",
+                audioLib="sdl2",
+                noAudio=True,
+                autoStart=True,
+            )
+            movie_stim._decoderOpts["an"] = True
+            movie_stim.loadMovie(video_path)
+            return movie_stim
+        return stim_class(
+            self.window,
+            filename=video_path,
+            movieLib="ffpyplayer",
+            audioLib="sdl2",
+            noAudio=no_audio,
+            autoStart=True,
+        )
+
+    def _create_vlc_movie_stim(self, video_path: str, no_audio: bool):
+        from psychopy.visual.vlcmoviestim import VlcMovieStim  # type: ignore
+
+        return VlcMovieStim(
+            self.window,
+            filename=video_path,
+            noAudio=no_audio,
+            autoStart=True,
         )
 
     def _movie_finished(self, movie_stim) -> bool:
@@ -690,6 +1184,7 @@ class LearningCycleTask:
         trial_number: int,
         trial: LearningTrialSpec,
         video_path: str,
+        reason_text: str | None = None,
     ) -> float:
         placeholder_seconds = self.config.missing_video_seconds
         start_clock = self.core.Clock()
@@ -703,9 +1198,10 @@ class LearningCycleTask:
                     f"主题: {trial.topic}\n负荷等级: {trial.load_level}"
                 ),
                 subtitle_text=(
-                    "当前视频文件不存在，使用占位播放窗口继续联调。"
+                    "当前视频无法正常播放，使用占位播放窗口继续联调。"
                 ),
                 detail_text=(
+                    f"{reason_text or '视频文件不存在或暂未接入。'}\n"
                     f"视频路径: {video_path}\n"
                     f"计划时长: {trial.planned_minutes:.2f} 分钟\n"
                     f"占位时长: {placeholder_seconds:.1f} 秒"
@@ -819,6 +1315,52 @@ class LearningCycleTask:
         if candidate.is_absolute():
             return str(candidate)
         return str((self.config.questionnaire_dir / candidate).resolve())
+
+    @staticmethod
+    def _summarize_video_error(exc: BaseException) -> str:
+        message = str(exc).strip() or exc.__class__.__name__
+        return " ".join(message.split())
+
+    @staticmethod
+    def _safe_close_movie_stim(movie_stim) -> None:
+        if movie_stim is None:
+            return
+        for method_name, args in (
+            ("stop", ()),
+            ("pause", (True,)),
+            ("unload", ()),
+            ("close", ()),
+        ):
+            method = getattr(movie_stim, method_name, None)
+            if callable(method):
+                try:
+                    method(*args)
+                except Exception:
+                    pass
+
+    @contextmanager
+    def _suppress_movie_backend_stderr(self):
+        saved_stderr_fd = None
+        devnull_fd = None
+        try:
+            saved_stderr_fd = os.dup(2)
+            devnull_fd = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull_fd, 2)
+        except OSError:
+            saved_stderr_fd = None
+            devnull_fd = None
+
+        try:
+            yield
+        finally:
+            if saved_stderr_fd is not None:
+                try:
+                    os.dup2(saved_stderr_fd, 2)
+                except OSError:
+                    pass
+                os.close(saved_stderr_fd)
+            if devnull_fd is not None:
+                os.close(devnull_fd)
 
     def _write_order_snapshot(self, output_path: Path) -> None:
         rows = [
