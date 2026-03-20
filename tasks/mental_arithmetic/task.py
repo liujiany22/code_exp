@@ -424,6 +424,29 @@ class MentalArithmeticTask:
         self.visual = None
         self.global_clock = None
 
+    def _emit_event(
+        self,
+        block_number: int | str,
+        trial_number: int | str,
+        difficulty_level: str,
+        event_name: str,
+        event_code: int,
+    ) -> float:
+        record = self.context.trigger.emit(
+            name=f"mental_arithmetic.{event_name}",
+            code=event_code,
+            width_ms=DEFAULT_TRIGGER_WIDTH_MS,
+        )
+        self.logger.log_event(
+            block_number=block_number,
+            trial_number=trial_number,
+            difficulty_level=difficulty_level,
+            event_name=event_name,
+            event_code=event_code,
+            timestamp=record.timestamp,
+        )
+        return record.timestamp
+
     def run(self) -> Path:
         self._prepare_psychopy()
         output_dir = self.context.output_dir / "mental_arithmetic"
@@ -434,31 +457,27 @@ class MentalArithmeticTask:
         task_error: BaseException | None = None
 
         try:
+            self._emit_event(
+                block_number=0,
+                trial_number=0,
+                difficulty_level="NA",
+                event_name="task_start",
+                event_code=MENTAL_ARITHMETIC["task_start"],
+            )
             if self.config.show_instructions:
                 self._show_instructions()
-            else:
-                self.logger.log_event(
-                    block_number=0,
-                    trial_number=0,
-                    difficulty_level="NA",
-                    event_name="task_start",
-                    event_code=MENTAL_ARITHMETIC["task_start"],
-                    timestamp=self.global_clock.getTime(),
-                )
 
             for block_number, block_problems in enumerate(self.blocks, start=1):
                 self._run_block(block_number, block_problems)
+            self._emit_event(
+                block_number="END",
+                trial_number="END",
+                difficulty_level="NA",
+                event_name="task_end",
+                event_code=MENTAL_ARITHMETIC["task_end"],
+            )
             if self.config.show_completion:
                 self._show_completion()
-            else:
-                self.logger.log_event(
-                    block_number="END",
-                    trial_number="END",
-                    difficulty_level="NA",
-                    event_name="task_end",
-                    event_code=MENTAL_ARITHMETIC["task_end"],
-                    timestamp=self.global_clock.getTime(),
-                )
         except BaseException as exc:
             task_error = exc
         finally:
@@ -619,21 +638,12 @@ class MentalArithmeticTask:
                 pass
 
     def _show_instructions(self) -> None:
-        self.logger.log_event(
-            block_number=0,
-            trial_number=0,
-            difficulty_level="NA",
-            event_name="task_start",
-            event_code=MENTAL_ARITHMETIC["task_start"],
-            timestamp=self.global_clock.getTime(),
-        )
-        self.logger.log_event(
+        self._emit_event(
             block_number=0,
             trial_number=0,
             difficulty_level="NA",
             event_name="instruction_start",
             event_code=MENTAL_ARITHMETIC["instruction_start"],
-            timestamp=self.global_clock.getTime(),
         )
 
         instruction_text = (
@@ -659,13 +669,12 @@ class MentalArithmeticTask:
             self._run_trial(block_number, block_trial_number, global_trial_number, problem)
 
         if block_number < len(self.blocks) and self.config.block_rest_seconds > 0:
-            self.logger.log_event(
+            self._emit_event(
                 block_number=block_number,
                 trial_number="REST",
                 difficulty_level="NA",
                 event_name="block_rest",
                 event_code=MENTAL_ARITHMETIC["inter_trial"],
-                timestamp=self.global_clock.getTime(),
             )
             self._show_timed_rest(block_number)
 
@@ -676,22 +685,20 @@ class MentalArithmeticTask:
         global_trial_number: int,
         problem: ArithmeticProblem,
     ) -> None:
-        self.logger.log_event(
+        self._emit_event(
             block_number=block_number,
             trial_number=global_trial_number,
             difficulty_level=problem.difficulty_level,
             event_name="trial_start",
             event_code=MENTAL_ARITHMETIC["trial_start"],
-            timestamp=self.global_clock.getTime(),
         )
 
-        self.logger.log_event(
+        self._emit_event(
             block_number=block_number,
             trial_number=global_trial_number,
             difficulty_level=problem.difficulty_level,
             event_name="question_onset",
             event_code=MENTAL_ARITHMETIC["question_onset"],
-            timestamp=self.global_clock.getTime(),
         )
         self._show_question(
             block_number=block_number,
@@ -702,13 +709,12 @@ class MentalArithmeticTask:
         if self.config.pre_response_blank_seconds > 0:
             self._show_break(self.config.pre_response_blank_seconds)
 
-        self.logger.log_event(
+        self._emit_event(
             block_number=block_number,
             trial_number=global_trial_number,
             difficulty_level=problem.difficulty_level,
             event_name="probe_onset",
             event_code=MENTAL_ARITHMETIC["probe_onset"],
-            timestamp=self.global_clock.getTime(),
         )
 
         participant_answer, response_time = self._collect_response(
@@ -739,23 +745,21 @@ class MentalArithmeticTask:
             )
         )
 
-        self.logger.log_event(
+        self._emit_event(
             block_number=block_number,
             trial_number=global_trial_number,
             difficulty_level=problem.difficulty_level,
             event_name="response",
             event_code=MENTAL_ARITHMETIC["response"],
-            timestamp=self.global_clock.getTime(),
         )
 
         if self.config.inter_trial_seconds > 0:
-            self.logger.log_event(
+            self._emit_event(
                 block_number=block_number,
                 trial_number=global_trial_number,
                 difficulty_level=problem.difficulty_level,
                 event_name="inter_trial",
                 event_code=MENTAL_ARITHMETIC["inter_trial"],
-                timestamp=self.global_clock.getTime(),
             )
             self._show_break(self.config.inter_trial_seconds)
 
@@ -851,15 +855,6 @@ class MentalArithmeticTask:
             accuracy = sum(row["ParticipantCorrect"] for row in self.logger.trial_rows) / len(
                 self.logger.trial_rows
             )
-
-        self.logger.log_event(
-            block_number="END",
-            trial_number="END",
-            difficulty_level="NA",
-            event_name="task_end",
-            event_code=MENTAL_ARITHMETIC["task_end"],
-            timestamp=self.global_clock.getTime(),
-        )
 
         self._wait_for_key(
             main_text=(

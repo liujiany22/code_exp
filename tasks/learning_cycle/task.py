@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -395,6 +396,13 @@ class LearningCycleTask:
         task_error: BaseException | None = None
 
         try:
+            self._emit_event(
+                trial_number=0,
+                trial=None,
+                event_name="task_start",
+                event_code=LEARNING_CYCLE["task_start"],
+                detail=f"counterbalance_row={self.counterbalance_row}",
+            )
             if self.config.show_task_intro:
                 self._show_task_intro()
             for trial_number, trial in enumerate(self.ordered_trials, start=1):
@@ -404,6 +412,13 @@ class LearningCycleTask:
                     and self.config.inter_trial_rest_seconds > 0
                 ):
                     self._run_inter_trial_rest(trial_number)
+            self._emit_event(
+                trial_number="END",
+                trial=None,
+                event_name="task_end",
+                event_code=LEARNING_CYCLE["task_end"],
+                detail=f"completed_trials={len(self.ordered_trials)}",
+            )
             if self.config.show_completion:
                 self._show_completion()
         except BaseException as exc:
@@ -419,6 +434,30 @@ class LearningCycleTask:
             raise task_error
 
         return output_dir / "learning_cycle_trial_log.csv"
+
+    def _emit_event(
+        self,
+        trial_number: int | str,
+        trial: LearningTrialSpec | None,
+        event_name: str,
+        event_code: int,
+        detail: str = "",
+        name: str | None = None,
+    ) -> float:
+        record = self.context.trigger.emit(
+            name=name or f"learning_cycle.{event_name}",
+            code=event_code,
+            width_ms=DEFAULT_TRIGGER_WIDTH_MS,
+        )
+        self.logger.log_event(
+            trial_number=trial_number,
+            trial=trial,
+            event_name=event_name,
+            event_code=event_code,
+            timestamp=record.timestamp,
+            detail=detail,
+        )
+        return record.timestamp
 
     def _prepare_psychopy(self) -> None:
         configure_macos_psychopy_runtime()
@@ -657,20 +696,6 @@ class LearningCycleTask:
         return row_index, ordered_trials
 
     def _show_task_intro(self) -> None:
-        record = self.context.trigger.emit(
-            name="learning_cycle.task_start",
-            code=LEARNING_CYCLE["task_start"],
-            width_ms=DEFAULT_TRIGGER_WIDTH_MS,
-        )
-        self.logger.log_event(
-            trial_number=0,
-            trial=None,
-            event_name="task_start",
-            event_code=LEARNING_CYCLE["task_start"],
-            timestamp=record.timestamp,
-            detail=f"counterbalance_row={self.counterbalance_row}",
-        )
-
         self._wait_for_space(
             main_text=(
                 "视频学习任务\n\n"
@@ -758,19 +783,14 @@ class LearningCycleTask:
         prompt_title: str,
         prompt_body: str,
     ) -> QuestionnaireOutcome:
-        record = self.context.trigger.emit(
-            name=f"learning_cycle.{phase_name}_start",
-            code=event_code,
-            width_ms=DEFAULT_TRIGGER_WIDTH_MS,
-        )
         resolved_form = self._resolve_form_path(form_file)
-        self.logger.log_event(
+        self._emit_event(
             trial_number=trial_number,
             trial=trial,
             event_name=f"{phase_name}_start",
             event_code=event_code,
-            timestamp=record.timestamp,
             detail=resolved_form,
+            name=f"learning_cycle.{phase_name}_start",
         )
 
         questionnaire_items = self._load_questionnaire_items(resolved_form)
@@ -897,6 +917,14 @@ class LearningCycleTask:
         items: list[QuestionnaireItem],
     ) -> None:
         for item in items:
+            self._emit_event(
+                trial_number=trial_number,
+                trial=trial,
+                event_name=f"{phase_name}_question_onset",
+                event_code=LEARNING_CYCLE["question_onset"],
+                detail=f"item={item.item_number}",
+                name=f"learning_cycle.{phase_name}.question_onset",
+            )
             self._show_question_statement(
                 trial_number=trial_number,
                 trial=trial,
@@ -910,6 +938,17 @@ class LearningCycleTask:
                 phase_name=phase_name,
                 item=item,
                 total_items=len(items),
+            )
+            self._emit_event(
+                trial_number=trial_number,
+                trial=trial,
+                event_name=f"{phase_name}_question_response",
+                event_code=LEARNING_CYCLE["question_response"],
+                detail=(
+                    f"item={item.item_number}|answer={participant_answer or 'timeout'}|"
+                    f"rt={response_time:.6f}"
+                ),
+                name=f"learning_cycle.{phase_name}.question_response",
             )
             self.logger.log_questionnaire_response(
                 QuestionnaireResponseRow(
@@ -1024,9 +1063,25 @@ class LearningCycleTask:
             detail_text="请按空格后开始描述。如果不了解，可报告不了解。",
         )
 
+        self._emit_event(
+            trial_number=trial_number,
+            trial=trial,
+            event_name=f"{phase_name}_recall_start",
+            event_code=LEARNING_CYCLE["recall_start"],
+            detail=material_label,
+            name=f"learning_cycle.{phase_name}.recall_start",
+        )
         duration_seconds = self._run_recall_recording_prompt(
             phase_name=phase_name,
             material_label=material_label,
+        )
+        self._emit_event(
+            trial_number=trial_number,
+            trial=trial,
+            event_name=f"{phase_name}_recall_end",
+            event_code=LEARNING_CYCLE["recall_end"],
+            detail=f"{material_label}|duration={duration_seconds:.6f}",
+            name=f"learning_cycle.{phase_name}.recall_end",
         )
         self.logger.log_recall_response(
             RecallResponseRow(
@@ -1115,18 +1170,13 @@ class LearningCycleTask:
                         video_path=video_path,
                         cache_dir=Path(cache_dir),
                     )
-                    start_record = self.context.trigger.emit(
-                        name="learning_cycle.video_start",
-                        code=LEARNING_CYCLE["video_start"],
-                        width_ms=DEFAULT_TRIGGER_WIDTH_MS,
-                    )
-                    self.logger.log_event(
+                    self._emit_event(
                         trial_number=trial_number,
                         trial=trial,
                         event_name="video_start",
                         event_code=LEARNING_CYCLE["video_start"],
-                        timestamp=start_record.timestamp,
                         detail=f"{video_path}|segments={len(segment_paths)}",
+                        name="learning_cycle.video_start",
                     )
 
                     elapsed_seconds = 0.0
@@ -1145,22 +1195,17 @@ class LearningCycleTask:
                             else "between_segments"
                         )
                         if segment_index == total_segments:
-                            end_record = self.context.trigger.emit(
-                                name="learning_cycle.video_end",
-                                code=LEARNING_CYCLE["video_end"],
-                                width_ms=DEFAULT_TRIGGER_WIDTH_MS,
-                            )
-                            self.logger.log_event(
+                            self._emit_event(
                                 trial_number=trial_number,
                                 trial=trial,
                                 event_name="video_end",
                                 event_code=LEARNING_CYCLE["video_end"],
-                                timestamp=end_record.timestamp,
                                 detail=(
                                     f"{video_path}|segments={total_segments}|"
                                     f"status={','.join(segment_statuses)}|"
                                     f"elapsed={elapsed_seconds:.6f}"
                                 ),
+                                name="learning_cycle.video_end",
                             )
 
                         self._collect_segment_rating(
@@ -1177,18 +1222,13 @@ class LearningCycleTask:
                 raise
             except Exception as exc:
                 error_detail = self._summarize_video_error(exc)
-                start_record = self.context.trigger.emit(
-                    name="learning_cycle.video_start",
-                    code=LEARNING_CYCLE["video_start"],
-                    width_ms=DEFAULT_TRIGGER_WIDTH_MS,
-                )
-                self.logger.log_event(
+                self._emit_event(
                     trial_number=trial_number,
                     trial=trial,
                     event_name="video_start",
                     event_code=LEARNING_CYCLE["video_start"],
-                    timestamp=start_record.timestamp,
                     detail=video_path,
+                    name="learning_cycle.video_start",
                 )
                 elapsed_seconds = self._run_missing_video_placeholder(
                     trial_number,
@@ -1200,32 +1240,22 @@ class LearningCycleTask:
                     ),
                 )
                 status = "placeholder_unplayable_video"
-                end_record = self.context.trigger.emit(
-                    name="learning_cycle.video_end",
-                    code=LEARNING_CYCLE["video_end"],
-                    width_ms=DEFAULT_TRIGGER_WIDTH_MS,
-                )
-                self.logger.log_event(
+                self._emit_event(
                     trial_number=trial_number,
                     trial=trial,
                     event_name="video_end",
                     event_code=LEARNING_CYCLE["video_end"],
-                    timestamp=end_record.timestamp,
                     detail=f"{video_path}|{status}|{elapsed_seconds:.6f}",
+                    name="learning_cycle.video_end",
                 )
         else:
-            start_record = self.context.trigger.emit(
-                name="learning_cycle.video_start",
-                code=LEARNING_CYCLE["video_start"],
-                width_ms=DEFAULT_TRIGGER_WIDTH_MS,
-            )
-            self.logger.log_event(
+            self._emit_event(
                 trial_number=trial_number,
                 trial=trial,
                 event_name="video_start",
                 event_code=LEARNING_CYCLE["video_start"],
-                timestamp=start_record.timestamp,
                 detail=video_path,
+                name="learning_cycle.video_start",
             )
             elapsed_seconds = self._run_missing_video_placeholder(
                 trial_number,
@@ -1233,18 +1263,13 @@ class LearningCycleTask:
                 video_path,
             )
             status = "placeholder_missing_video"
-            end_record = self.context.trigger.emit(
-                name="learning_cycle.video_end",
-                code=LEARNING_CYCLE["video_end"],
-                width_ms=DEFAULT_TRIGGER_WIDTH_MS,
-            )
-            self.logger.log_event(
+            self._emit_event(
                 trial_number=trial_number,
                 trial=trial,
                 event_name="video_end",
                 event_code=LEARNING_CYCLE["video_end"],
-                timestamp=end_record.timestamp,
                 detail=f"{video_path}|{status}|{elapsed_seconds:.6f}",
+                name="learning_cycle.video_end",
             )
 
         self._show_blank(self.config.post_phase_blank_seconds)
@@ -1257,13 +1282,19 @@ class LearningCycleTask:
 
         try:
             with self._suppress_movie_backend_stderr():
-                movie_stim, status = self._build_movie_stim(video_path)
-                while True:
-                    self._ensure_escape_not_pressed()
-                    movie_stim.draw()
-                    self.window.flip()
-                    if self._movie_finished(movie_stim):
-                        break
+                try:
+                    movie_stim, status = self._build_movie_stim(video_path)
+                    while True:
+                        self._ensure_escape_not_pressed()
+                        movie_stim.draw()
+                        self.window.flip()
+                        if self._movie_finished(movie_stim):
+                            break
+                except Exception:
+                    if not self._ffplay_available():
+                        raise
+                    self._play_video_with_ffplay(video_path)
+                    status = "played_ffplay"
         finally:
             self._safe_close_movie_stim(movie_stim)
 
@@ -1284,14 +1315,13 @@ class LearningCycleTask:
 
     def _movie_stim_attempts(self, video_path: str):
         attempts: list[tuple[str, str, object]] = []
-        if sys.platform == "darwin":
-            attempts.append(
-                (
-                    "played_vlc",
-                    "VlcMovieStim(audio)",
-                    lambda: self._create_vlc_movie_stim(video_path, no_audio=False),
-                )
+        attempts.append(
+            (
+                "played_vlc",
+                "VlcMovieStim(audio)",
+                lambda: self._create_vlc_movie_stim(video_path, no_audio=False),
             )
+        )
 
         attempts.append(
             (
@@ -1302,14 +1332,13 @@ class LearningCycleTask:
         )
 
         if self._allow_silent_video_fallback():
-            if sys.platform == "darwin":
-                attempts.append(
-                    (
-                        "played_vlc_silent",
-                        "VlcMovieStim(silent)",
-                        lambda: self._create_vlc_movie_stim(video_path, no_audio=True),
-                    )
+            attempts.append(
+                (
+                    "played_vlc_silent",
+                    "VlcMovieStim(silent)",
+                    lambda: self._create_vlc_movie_stim(video_path, no_audio=True),
                 )
+            )
             attempts.append(
                 (
                     "played_ffpyplayer_silent",
@@ -1358,6 +1387,29 @@ class LearningCycleTask:
             autoStart=True,
         )
 
+    @staticmethod
+    def _ffplay_available() -> bool:
+        return shutil.which("ffplay") is not None
+
+    def _play_video_with_ffplay(self, video_path: str) -> None:
+        command = [
+            "ffplay",
+            "-autoexit",
+            "-fs",
+            "-loglevel",
+            "error",
+            video_path,
+        ]
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if completed.returncode != 0:
+            error_text = completed.stderr.strip() or completed.stdout.strip()
+            raise RuntimeError(f"ffplay playback failed: {error_text}")
+
     def _movie_finished(self, movie_stim) -> bool:
         finished_flag = getattr(movie_stim, "isFinished", None)
         if isinstance(finished_flag, bool):
@@ -1405,6 +1457,8 @@ class LearningCycleTask:
             "segment",
             "-segment_time",
             str(segment_seconds),
+            "-segment_format_options",
+            "movflags=+faststart",
             "-reset_timestamps",
             "1",
             str(output_pattern),
@@ -1440,17 +1494,41 @@ class LearningCycleTask:
         rating_values = list(
             range(self.config.segment_rating_min, self.config.segment_rating_max + 1)
         )
+        key_to_rating = {str(value): value for value in rating_values}
+        key_to_rating.update({f"num_{value}": value for value in rating_values})
+        self._emit_event(
+            trial_number=trial_number,
+            trial=trial,
+            event_name="segment_rating_start",
+            event_code=LEARNING_CYCLE["segment_rating_start"],
+            detail=(
+                f"segment={segment_index}/{total_segments}|moment={rating_moment}|"
+                f"file={Path(segment_file).name}"
+            ),
+            name="learning_cycle.segment_rating_start",
+        )
 
         while True:
             self._ensure_escape_not_pressed()
             keys = self.event.getKeys(
-                keyList=[str(value) for value in rating_values] + ["escape"],
+                keyList=list(key_to_rating.keys()) + ["escape"],
                 timeStamped=response_clock,
             )
             for key, response_time in keys:
                 if key == "escape":
                     raise TaskAborted("Experiment aborted by user.")
-                rating_value = int(key)
+                rating_value = key_to_rating[key]
+                self._emit_event(
+                    trial_number=trial_number,
+                    trial=trial,
+                    event_name="segment_rating_response",
+                    event_code=LEARNING_CYCLE["segment_rating_response"],
+                    detail=(
+                        f"segment={segment_index}/{total_segments}|rating={rating_value}|"
+                        f"rt={response_time:.6f}|moment={rating_moment}"
+                    ),
+                    name="learning_cycle.segment_rating_response",
+                )
                 self.logger.log_segment_rating(
                     SegmentRatingRow(
                         TrialNumber=trial_number,
@@ -1469,7 +1547,18 @@ class LearningCycleTask:
             buttons = self.mouse.getPressed()
             if buttons != previous_buttons:
                 for rating_value, box in zip(rating_values, self.segment_rating_boxes):
-                    if box.contains(self.mouse) and any(buttons):
+                    if box.contains(self.mouse) and buttons[0]:
+                        self._emit_event(
+                            trial_number=trial_number,
+                            trial=trial,
+                            event_name="segment_rating_response",
+                            event_code=LEARNING_CYCLE["segment_rating_response"],
+                            detail=(
+                                f"segment={segment_index}/{total_segments}|rating={rating_value}|"
+                                f"rt={response_clock.getTime():.6f}|moment={rating_moment}"
+                            ),
+                            name="learning_cycle.segment_rating_response",
+                        )
                         self.logger.log_segment_rating(
                             SegmentRatingRow(
                                 TrialNumber=trial_number,
@@ -1546,20 +1635,6 @@ class LearningCycleTask:
         return start_clock.getTime()
 
     def _show_completion(self) -> None:
-        record = self.context.trigger.emit(
-            name="learning_cycle.task_end",
-            code=LEARNING_CYCLE["task_end"],
-            width_ms=DEFAULT_TRIGGER_WIDTH_MS,
-        )
-        self.logger.log_event(
-            trial_number="END",
-            trial=None,
-            event_name="task_end",
-            event_code=LEARNING_CYCLE["task_end"],
-            timestamp=record.timestamp,
-            detail=f"completed_trials={len(self.ordered_trials)}",
-        )
-
         self._wait_for_space(
             main_text=(
                 "视频学习任务结束\n\n"

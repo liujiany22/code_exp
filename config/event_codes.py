@@ -35,4 +35,10 @@ LEARNING_CYCLE = {
     "rating_start": 45,
     "posttest_start": 46,
     "task_end": 47,
+    "recall_start": 48,
+    "recall_end": 49,
+    "question_onset": 50,
+    "question_response": 51,
+    "segment_rating_start": 52,
+    "segment_rating_response": 53,
 }
