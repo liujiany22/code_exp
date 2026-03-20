@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import csv
+import random
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 from common.data_io import ExperimentContext
+from common.psychopy_compat import configure_macos_psychopy_runtime
 from config.event_codes import RESTING_STATE
 from config.settings import (
     DEFAULT_TRIGGER_WIDTH_MS,
@@ -33,6 +35,12 @@ class RestingStateConfig:
     text_color: str = REST_TEXT_COLOR
     font: str = REST_FONT
     auto_advance: bool = False
+    phase_order: tuple[str, str] = ("eyes_open", "eyes_closed")
+    randomize_phase_order: bool = False
+    show_task_intro: bool = True
+    show_phase_intro: bool = True
+    show_completion: bool = True
+    play_phase_transition_tone: bool = False
 
     def __post_init__(self) -> None:
         if self.eyes_open_seconds <= 0:
@@ -43,6 +51,8 @@ class RestingStateConfig:
             raise ValueError("cycles must be positive.")
         if len(self.window_size) != 2 or any(size <= 0 for size in self.window_size):
             raise ValueError("window_size must contain two positive integers.")
+        if sorted(self.phase_order) != ["eyes_closed", "eyes_open"]:
+            raise ValueError("phase_order must contain eyes_open and eyes_closed exactly once.")
 
 
 class TaskAborted(RuntimeError):
@@ -95,6 +105,7 @@ class RestingStateTask:
         self.subtitle_stim = None
         self.detail_stim = None
         self.fixation_stim = None
+        self.sound = None
 
     def run(self) -> Path:
         output_path = self.context.output_dir / "resting_state_events.csv"
@@ -103,64 +114,42 @@ class RestingStateTask:
 
         try:
             self._prepare_psychopy()
-            self._show_intro()
+            if self.config.show_task_intro:
+                self._show_intro()
             _emit_event(self.context, log_rows, 0, "task", "task_start")
 
             for cycle_index in range(1, self.config.cycles + 1):
-                self._show_phase_intro(
-                    title=f"第 {cycle_index} 轮：睁眼静息",
-                    subtitle=(
-                        f"请睁眼注视中央十字，保持放松，尽量减少眨眼和身体动作。\n"
-                        f"本阶段持续 {self.config.eyes_open_seconds} 秒。"
-                    ),
-                )
-                _emit_event(
-                    self.context,
-                    log_rows,
-                    cycle_index,
-                    "eyes_open",
-                    "eyes_open_start",
-                )
-                self._run_phase(
-                    seconds=self.config.eyes_open_seconds,
-                    show_fixation=True,
-                )
-                _emit_event(
-                    self.context,
-                    log_rows,
-                    cycle_index,
-                    "eyes_open",
-                    "eyes_open_end",
-                )
-
-                self._show_phase_intro(
-                    title=f"第 {cycle_index} 轮：闭眼静息",
-                    subtitle=(
-                        f"请闭上双眼，保持放松和安静，尽量不要移动。\n"
-                        f"本阶段持续 {self.config.eyes_closed_seconds} 秒。"
-                    ),
-                )
-                _emit_event(
-                    self.context,
-                    log_rows,
-                    cycle_index,
-                    "eyes_closed",
-                    "eyes_closed_start",
-                )
-                self._run_phase(
-                    seconds=self.config.eyes_closed_seconds,
-                    show_fixation=False,
-                )
-                _emit_event(
-                    self.context,
-                    log_rows,
-                    cycle_index,
-                    "eyes_closed",
-                    "eyes_closed_end",
-                )
+                phase_order = self._phase_order_for_cycle(cycle_index)
+                for phase_position, phase_name in enumerate(phase_order):
+                    if phase_position > 0 and self.config.play_phase_transition_tone:
+                        self._play_tone()
+                    if self.config.show_phase_intro:
+                        self._show_phase_intro(
+                            title=self._phase_title(cycle_index, phase_name),
+                            subtitle=self._phase_subtitle(phase_name),
+                        )
+                    _emit_event(
+                        self.context,
+                        log_rows,
+                        cycle_index,
+                        phase_name,
+                        f"{phase_name}_start",
+                    )
+                    self._run_phase(
+                        seconds=self._phase_seconds(phase_name),
+                        show_fixation=phase_name == "eyes_open",
+                    )
+                    _emit_event(
+                        self.context,
+                        log_rows,
+                        cycle_index,
+                        phase_name,
+                        f"{phase_name}_end",
+                    )
 
             _emit_event(self.context, log_rows, 0, "task", "task_end")
-            self._show_completion()
+            if self.config.show_completion:
+                self._show_completion()
         except BaseException as exc:
             task_error = exc
         finally:
@@ -174,8 +163,9 @@ class RestingStateTask:
         return output_path
 
     def _prepare_psychopy(self) -> None:
+        configure_macos_psychopy_runtime()
         try:
-            from psychopy import core, event, visual  # type: ignore
+            from psychopy import core, event, sound, visual  # type: ignore
         except ModuleNotFoundError as exc:
             raise RuntimeError(
                 "PsychoPy is not installed in the Python interpreter running this task. "
@@ -184,6 +174,7 @@ class RestingStateTask:
 
         self.core = core
         self.event = event
+        self.sound = sound
         self.visual = visual
         self.window = visual.Window(
             size=self.config.window_size,
@@ -273,6 +264,52 @@ class RestingStateTask:
 
             self._draw_text_page(title, subtitle, detail)
             self.window.flip()
+
+    def _phase_order_for_cycle(self, cycle_index: int) -> tuple[str, str]:
+        if not self.config.randomize_phase_order:
+            return self.config.phase_order
+
+        cycle_random = random.Random(
+            f"{self.context.participant_id}-{self.context.session_id}-{cycle_index}"
+        )
+        phase_order = list(self.config.phase_order)
+        cycle_random.shuffle(phase_order)
+        return tuple(phase_order)
+
+    def _phase_seconds(self, phase_name: str) -> int:
+        return (
+            self.config.eyes_open_seconds
+            if phase_name == "eyes_open"
+            else self.config.eyes_closed_seconds
+        )
+
+    def _phase_title(self, cycle_index: int, phase_name: str) -> str:
+        return (
+            f"第 {cycle_index} 轮：睁眼静息"
+            if phase_name == "eyes_open"
+            else f"第 {cycle_index} 轮：闭眼静息"
+        )
+
+    def _phase_subtitle(self, phase_name: str) -> str:
+        if phase_name == "eyes_open":
+            return (
+                "请睁眼注视中央十字，保持放松，尽量减少眨眼和身体动作。\n"
+                f"本阶段持续 {self.config.eyes_open_seconds} 秒。"
+            )
+        return (
+            "请闭上双眼，保持放松和安静，尽量不要移动。\n"
+            f"本阶段持续 {self.config.eyes_closed_seconds} 秒。"
+        )
+
+    def _play_tone(self) -> None:
+        if self.sound is None:
+            return
+        try:
+            cue = self.sound.Sound(value=880, secs=0.2, stereo=True)
+            cue.play()
+            self.core.wait(0.25)
+        except Exception:
+            pass
 
     def _run_phase(self, seconds: int, show_fixation: bool) -> None:
         phase_clock = self.core.Clock()

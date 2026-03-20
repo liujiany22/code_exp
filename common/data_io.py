@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from common.participant_info import ParticipantInfo, write_participant_info
 from config.settings import (
     DEFAULT_SESSION_ID,
     EYELINK_BACKEND,
@@ -45,21 +46,34 @@ class ExperimentContext:
     run_id: str
     output_dir: Path
     trigger: TriggerClient
+    participant_info: ParticipantInfo
 
 
 def build_context(
     participant_id: str = "pilot",
     session_id: str = DEFAULT_SESSION_ID,
+    participant_info: ParticipantInfo | None = None,
 ) -> ExperimentContext:
+    if participant_info is None:
+        participant_info = ParticipantInfo(
+            participant_id=participant_id,
+            session_id=session_id,
+            name="",
+            age="",
+        )
+    participant_id = participant_info.participant_id
+    session_id = participant_info.session_id
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = RAW_BEH_DIR / participant_id / session_id / run_id
     output_dir.mkdir(parents=True, exist_ok=True)
+    write_participant_info(output_dir, participant_info, run_id)
 
     return ExperimentContext(
         participant_id=participant_id,
         session_id=session_id,
         run_id=run_id,
         output_dir=output_dir,
+        participant_info=participant_info,
         trigger=get_trigger(
             TRIGGER_MODE,
             port=TRIGGER_PORT,

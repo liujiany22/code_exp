@@ -856,10 +856,6 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
             # populate list with coloured block sequence
             block_order.append(blocks[block]) 
             respond_block_order.append(respond_blocks[block])
-        print("block_order", block_order)
-        print("correct_order", correct_order)
-        print("respond_block_order", respond_block_order)
-        
         # set the position of blocks to be random
         # preset some random locations so that the boxes never overlap
         xys = [[0.25625, 0.0975], [0.0675, 0.07375], [-0.09875, 0.065], [-0.26625, 0.235], [0.22, 0.2425], [0.16625, 0.3825], [-0.18625, 0.41125], [-0.01875, 0.235], [-0.3575, -0.05625], [-0.12125, -0.12625], [0.05875, -0.0575], [0.19375, -0.17125], [0.30125, -0.0175], [0.4125, -0.1325], [0.365, -0.27625], [-0.01125, -0.295], [-0.285, -0.27125], [-0.4075, 0.11875], [-0.485, 0.34625], [0.4625, 0.35875], [0.45375, 0.175], [0.54, 0.03625], [0.62875, -0.1825], [0.57875, -0.31375], [-0.45875, -0.3], [-0.55125, -0.13375], [-0.6025, 0.0725], [-0.675, 0.29875], [-0.68625, -0.225], [0.03125, -0.41], [0.1925, -0.295], [-0.16125, -0.28], [-0.24625, 0.04375], [-0.0225, 0.395], [0.28875, 0.39875], [0.6375, 0.27375], [-0.35125, 0.36625]]
@@ -1814,26 +1810,23 @@ def run(expInfo, thisExp, win, globalClock=None, thisSession=None):
         # Run 'End Routine' code from check_correct
         # create a variable to store accuracy
         correct = 0
-        print('order_clicked', order_clicked)
-        print('correct_order', correct_order)
-        
         # create a list to store accuracy
         correct_list = []
-        count = 0
-        for name in order_clicked:
-            if name == correct_order[count]:
+        max_length = max(len(order_clicked), len(correct_order))
+        for index in range(max_length):
+            clicked_name = order_clicked[index] if index < len(order_clicked) else None
+            expected_name = correct_order[index] if index < len(correct_order) else None
+            if clicked_name is not None and expected_name is not None and clicked_name == expected_name:
                 correct_list.append(1) # add value of 1 if block clicked matches the correct order
             else:
-                correct_list.append(0) # add 0 if no match
-            count += 1
-        print(correct_list)
+                correct_list.append(0) # add 0 if no match or response length differs
         # e.g. list - [1,1,1] for 3 sequences block
         
         # save list to csv output
         thisExp.addData('correct_list', correct_list)
         
         # if the sum of list is equals to number of sequence, the trial is correct
-        if sum(correct_list) == len(correct_list):
+        if len(order_clicked) == len(correct_order) and sum(correct_list) == len(correct_order):
             correct = 1
         
         # save correct variable to csv output

@@ -5,7 +5,7 @@ from __future__ import annotations
 # still take priority over these values when both are present.
 
 # EEG trigger settings
-TRIGGER_MODE = "serial"
+TRIGGER_MODE = "dummy"  # "serial" or "dummy"
 TRIGGER_PORT = "COM3"
 TRIGGER_BAUDRATE = 115200
 TRIGGER_TIMEOUT_SECONDS = 1.0

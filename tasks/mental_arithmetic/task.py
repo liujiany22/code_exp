@@ -8,19 +8,25 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from common.data_io import ExperimentContext
+from common.psychopy_compat import configure_macos_psychopy_runtime
 from config.event_codes import MENTAL_ARITHMETIC
 from config.settings import (
     MENTAL_ARITHMETIC_ALLOW_GUI,
     MENTAL_ARITHMETIC_BACKGROUND_COLOR,
+    MENTAL_ARITHMETIC_BLOCK_COUNT,
+    MENTAL_ARITHMETIC_BLOCK_REST_SECONDS,
     MENTAL_ARITHMETIC_FIXATION_SECONDS,
     MENTAL_ARITHMETIC_FONT,
     MENTAL_ARITHMETIC_FORCE_MOUSE_VISIBLE,
     MENTAL_ARITHMETIC_FULLSCREEN,
     MENTAL_ARITHMETIC_INTER_TRIAL_SECONDS,
+    MENTAL_ARITHMETIC_PRE_RESPONSE_BLANK_SECONDS,
+    MENTAL_ARITHMETIC_PROBE_COLOR,
     MENTAL_ARITHMETIC_Q_RULES,
     MENTAL_ARITHMETIC_RANDOM_SEED,
     MENTAL_ARITHMETIC_RESPONSE_TIMEOUT_SECONDS,
     MENTAL_ARITHMETIC_TEXT_COLOR,
+    MENTAL_ARITHMETIC_TRIALS_PER_BLOCK,
     MENTAL_ARITHMETIC_TRIALS_PER_LEVEL,
     MENTAL_ARITHMETIC_WINDOW_SIZE,
 )
@@ -53,14 +59,20 @@ class ArithmeticProblem:
     q_value: float
     carry_count: int
     digit_complexity: int
+    probe_answer: int
+    probe_matches: bool
 
 
 @dataclass(frozen=True)
 class TrialResult:
+    BlockNumber: int
     TrialNumber: int
     DifficultyLevel: str
     Question: str
     CorrectAnswer: int
+    ProbeAnswer: int
+    ProbeMatches: int
+    CorrectResponse: str
     ParticipantAnswer: str
     ResponseTime: str
     QValue: float
@@ -76,10 +88,15 @@ class MentalArithmeticConfig:
     window_size: tuple[int, int] = MENTAL_ARITHMETIC_WINDOW_SIZE
     background_color: str = MENTAL_ARITHMETIC_BACKGROUND_COLOR
     text_color: str = MENTAL_ARITHMETIC_TEXT_COLOR
+    probe_color: str = MENTAL_ARITHMETIC_PROBE_COLOR
     font: str = MENTAL_ARITHMETIC_FONT
     fixation_seconds: float = MENTAL_ARITHMETIC_FIXATION_SECONDS
+    pre_response_blank_seconds: float = MENTAL_ARITHMETIC_PRE_RESPONSE_BLANK_SECONDS
     inter_trial_seconds: float = MENTAL_ARITHMETIC_INTER_TRIAL_SECONDS
     response_timeout_seconds: float = MENTAL_ARITHMETIC_RESPONSE_TIMEOUT_SECONDS
+    block_count: int = MENTAL_ARITHMETIC_BLOCK_COUNT
+    trials_per_block: int = MENTAL_ARITHMETIC_TRIALS_PER_BLOCK
+    block_rest_seconds: float = MENTAL_ARITHMETIC_BLOCK_REST_SECONDS
     random_seed: int | None = MENTAL_ARITHMETIC_RANDOM_SEED
     trial_counts: dict[str, int] = field(
         default_factory=lambda: dict(MENTAL_ARITHMETIC_TRIALS_PER_LEVEL)
@@ -95,6 +112,8 @@ class MentalArithmeticConfig:
         }
     )
     auto_advance: bool = False
+    show_instructions: bool = True
+    show_completion: bool = True
 
     def __post_init__(self) -> None:
         self._validate()
@@ -105,11 +124,18 @@ class MentalArithmeticConfig:
 
         for field_name in (
             "fixation_seconds",
+            "pre_response_blank_seconds",
             "inter_trial_seconds",
             "response_timeout_seconds",
+            "block_rest_seconds",
         ):
             if getattr(self, field_name) < 0:
                 raise ValueError(f"{field_name} must be non-negative.")
+
+        if self.block_count <= 0:
+            raise ValueError("block_count must be positive.")
+        if self.trials_per_block <= 0:
+            raise ValueError("trials_per_block must be positive.")
 
         unknown_trial_levels = set(self.trial_counts) - set(EXPECTED_DIFFICULTY_LEVELS)
         if unknown_trial_levels:
@@ -128,6 +154,14 @@ class MentalArithmeticConfig:
         for level, count in self.trial_counts.items():
             if count < 0:
                 raise ValueError(f"trial count for {level} must be non-negative.")
+
+        total_trials = sum(self.trial_counts.values())
+        expected_trials = self.block_count * self.trials_per_block
+        if total_trials != expected_trials:
+            raise ValueError(
+                "trial_counts total must equal block_count * trials_per_block. "
+                f"Expected {expected_trials}, got {total_trials}."
+            )
 
         unknown_rule_levels = set(self.difficulty_rule_specs) - set(EXPECTED_DIFFICULTY_LEVELS)
         if unknown_rule_levels:
@@ -230,15 +264,18 @@ class ProblemGenerator:
             if not rule.matches(q_value):
                 continue
 
+            probe_answer = self._build_probe_answer(left_operand + right_operand)
             return ArithmeticProblem(
                 difficulty_level=level,
                 left_operand=left_operand,
                 right_operand=right_operand,
-                question=f"{left_operand} + {right_operand} = ?",
+                question=f"{left_operand} + {right_operand}",
                 correct_answer=left_operand + right_operand,
                 q_value=q_value,
                 carry_count=carry_count,
                 digit_complexity=digit_complexity,
+                probe_answer=probe_answer,
+                probe_matches=probe_answer == (left_operand + right_operand),
             )
 
         raise RuntimeError(f"Unable to generate a valid problem for difficulty {level}.")
@@ -269,13 +306,28 @@ class ProblemGenerator:
         upper = (10**digits) - 1
         return self.random.randint(lower, upper)
 
+    def _build_probe_answer(self, correct_answer: int) -> int:
+        match_answer = self.random.random() < 0.5
+        if match_answer:
+            return correct_answer
+
+        offsets = (-3, -2, -1, 1, 2, 3)
+        while True:
+            candidate = correct_answer + self.random.choice(offsets)
+            if candidate > 0 and candidate != correct_answer:
+                return candidate
+
 
 class TrialLogger:
     TRIAL_FIELDNAMES = (
+        "BlockNumber",
         "TrialNumber",
         "DifficultyLevel",
         "Question",
         "CorrectAnswer",
+        "ProbeAnswer",
+        "ProbeMatches",
+        "CorrectResponse",
         "ParticipantAnswer",
         "ResponseTime",
         "QValue",
@@ -283,6 +335,7 @@ class TrialLogger:
         "ParticipantCorrect",
     )
     EVENT_FIELDNAMES = (
+        "BlockNumber",
         "TrialNumber",
         "DifficultyLevel",
         "EventName",
@@ -299,6 +352,7 @@ class TrialLogger:
 
     def log_event(
         self,
+        block_number: int | str,
         trial_number: int | str,
         difficulty_level: str,
         event_name: str,
@@ -307,6 +361,7 @@ class TrialLogger:
     ) -> None:
         self.event_rows.append(
             {
+                "BlockNumber": block_number,
                 "TrialNumber": trial_number,
                 "DifficultyLevel": difficulty_level,
                 "EventName": event_name,
@@ -346,12 +401,14 @@ class MentalArithmeticTask:
         self.generator = ProblemGenerator(config)
         self.logger = TrialLogger()
         self.problems = self.generator.generate_problem_set()
+        self.blocks = self._build_blocks()
         self.window = None
         self.title_stim = None
         self.subtitle_stim = None
-        self.input_stim = None
-        self.fixation_stim = None
+        self.probe_stim = None
         self.summary_stim = None
+        self.break_stim = None
+        self.mouse = None
         self.core = None
         self.event = None
         self.visual = None
@@ -367,10 +424,31 @@ class MentalArithmeticTask:
         task_error: BaseException | None = None
 
         try:
-            self._show_instructions()
-            for trial_number, problem in enumerate(self.problems, start=1):
-                self._run_trial(trial_number, problem)
-            self._show_completion()
+            if self.config.show_instructions:
+                self._show_instructions()
+            else:
+                self.logger.log_event(
+                    block_number=0,
+                    trial_number=0,
+                    difficulty_level="NA",
+                    event_name="task_start",
+                    event_code=MENTAL_ARITHMETIC["task_start"],
+                    timestamp=self.global_clock.getTime(),
+                )
+
+            for block_number, block_problems in enumerate(self.blocks, start=1):
+                self._run_block(block_number, block_problems)
+            if self.config.show_completion:
+                self._show_completion()
+            else:
+                self.logger.log_event(
+                    block_number="END",
+                    trial_number="END",
+                    difficulty_level="NA",
+                    event_name="task_end",
+                    event_code=MENTAL_ARITHMETIC["task_end"],
+                    timestamp=self.global_clock.getTime(),
+                )
         except BaseException as exc:
             task_error = exc
         finally:
@@ -386,8 +464,8 @@ class MentalArithmeticTask:
         return output_dir / "mental_arithmetic_behavior.csv"
 
     def _prepare_psychopy(self) -> None:
+        configure_macos_psychopy_runtime()
         try:
-            import psychopy  # type: ignore
             from psychopy import core, event, visual  # type: ignore
         except ModuleNotFoundError as exc:
             raise RuntimeError(
@@ -408,6 +486,7 @@ class MentalArithmeticTask:
         )
         self._force_mouse_visible()
         self.global_clock = core.Clock()
+        self.mouse = event.Mouse(win=self.window)
 
         self.title_stim = visual.TextStim(
             win=self.window,
@@ -425,25 +504,17 @@ class MentalArithmeticTask:
             color=self.config.text_color,
             colorSpace="named",
             height=0.03,
-            pos=(0, -0.38),
+            pos=(0, -0.34),
             wrapWidth=1.4,
         )
-        self.input_stim = visual.TextStim(
+        self.probe_stim = visual.TextStim(
             win=self.window,
-            text="_",
+            text="",
             font=self.config.font,
-            color=self.config.text_color,
+            color=self.config.probe_color,
             colorSpace="named",
             height=0.07,
-            pos=(0, -0.24),
-        )
-        self.fixation_stim = visual.TextStim(
-            win=self.window,
-            text="+",
-            font=self.config.font,
-            color=self.config.text_color,
-            colorSpace="named",
-            height=0.08,
+            pos=(0, -0.12),
         )
         self.summary_stim = visual.TextStim(
             win=self.window,
@@ -454,6 +525,20 @@ class MentalArithmeticTask:
             height=0.04,
             wrapWidth=1.4,
         )
+        self.break_stim = visual.TextStim(
+            win=self.window,
+            text="+",
+            font=self.config.font,
+            color=self.config.text_color,
+            colorSpace="named",
+            height=0.09,
+        )
+
+    def _build_blocks(self) -> list[list[ArithmeticProblem]]:
+        return [
+            self.problems[index : index + self.config.trials_per_block]
+            for index in range(0, len(self.problems), self.config.trials_per_block)
+        ]
 
     def _force_mouse_visible(self) -> None:
         if not self.config.force_mouse_visible or self.window is None:
@@ -484,16 +569,16 @@ class MentalArithmeticTask:
                 pass
 
     def _show_instructions(self) -> None:
-        # EEG Trigger Placeholder: task_start
         self.logger.log_event(
+            block_number=0,
             trial_number=0,
             difficulty_level="NA",
             event_name="task_start",
             event_code=MENTAL_ARITHMETIC["task_start"],
             timestamp=self.global_clock.getTime(),
         )
-        # EEG Trigger Placeholder: instruction_start
         self.logger.log_event(
+            block_number=0,
             trial_number=0,
             difficulty_level="NA",
             event_name="instruction_start",
@@ -503,51 +588,97 @@ class MentalArithmeticTask:
 
         instruction_text = (
             "心算任务\n\n"
-            "你将看到一道加法题，请在心中完成计算。\n"
-            "使用键盘输入答案，按回车提交。\n"
-            "如果输错，可以按退格删除。\n"
+            "在这个任务中，你将看到一道由黑色数字组成的加法题。\n"
+            "请先在心中完成计算。随后屏幕中央会短暂出现“+”，"
+            f"然后会出现一个蓝色数字，"
+            f"你需要在 {self.config.response_timeout_seconds:.0f} 秒内判断它是否等于正确答案。\n"
+            "如果蓝色数字等于正确答案，请按鼠标左键；如果不等，请按鼠标右键。\n"
             "按空格开始。"
         )
 
         self._wait_for_key(
             main_text=instruction_text,
-            subtitle_text=(
-                "按键说明: 数字键输入，Backspace 删除，Enter 提交，Esc 中止。"
-            ),
+            subtitle_text="反应方式：左键表示相等，右键表示不相等，Esc 中止。",
             allowed_keys=("space", "return"),
             auto_advance=self.config.auto_advance,
         )
 
-    def _run_trial(self, trial_number: int, problem: ArithmeticProblem) -> None:
-        # EEG Trigger Placeholder: trial_start
+    def _run_block(self, block_number: int, block_problems: list[ArithmeticProblem]) -> None:
+        for block_trial_number, problem in enumerate(block_problems, start=1):
+            global_trial_number = ((block_number - 1) * self.config.trials_per_block) + block_trial_number
+            self._run_trial(block_number, block_trial_number, global_trial_number, problem)
+
+        if block_number < len(self.blocks) and self.config.block_rest_seconds > 0:
+            self.logger.log_event(
+                block_number=block_number,
+                trial_number="REST",
+                difficulty_level="NA",
+                event_name="block_rest",
+                event_code=MENTAL_ARITHMETIC["inter_trial"],
+                timestamp=self.global_clock.getTime(),
+            )
+            self._show_timed_rest(block_number)
+
+    def _run_trial(
+        self,
+        block_number: int,
+        block_trial_number: int,
+        global_trial_number: int,
+        problem: ArithmeticProblem,
+    ) -> None:
         self.logger.log_event(
-            trial_number=trial_number,
+            block_number=block_number,
+            trial_number=global_trial_number,
             difficulty_level=problem.difficulty_level,
             event_name="trial_start",
             event_code=MENTAL_ARITHMETIC["trial_start"],
             timestamp=self.global_clock.getTime(),
         )
 
-        self._run_fixation()
-
-        # EEG Trigger Placeholder: question_onset
         self.logger.log_event(
-            trial_number=trial_number,
+            block_number=block_number,
+            trial_number=global_trial_number,
             difficulty_level=problem.difficulty_level,
             event_name="question_onset",
             event_code=MENTAL_ARITHMETIC["question_onset"],
             timestamp=self.global_clock.getTime(),
         )
+        self._show_question(
+            block_number=block_number,
+            block_trial_number=block_trial_number,
+            problem=problem,
+        )
 
-        participant_answer, response_time = self._collect_answer(problem, trial_number)
-        participant_correct = int(str(problem.correct_answer) == participant_answer)
+        if self.config.pre_response_blank_seconds > 0:
+            self._show_break(self.config.pre_response_blank_seconds)
+
+        self.logger.log_event(
+            block_number=block_number,
+            trial_number=global_trial_number,
+            difficulty_level=problem.difficulty_level,
+            event_name="probe_onset",
+            event_code=MENTAL_ARITHMETIC["probe_onset"],
+            timestamp=self.global_clock.getTime(),
+        )
+
+        participant_answer, response_time = self._collect_response(
+            block_number=block_number,
+            block_trial_number=block_trial_number,
+            problem=problem,
+        )
+        correct_response = "equal" if problem.probe_matches else "not_equal"
+        participant_correct = int(correct_response == participant_answer)
 
         self.logger.log_trial(
             TrialResult(
-                TrialNumber=trial_number,
+                BlockNumber=block_number,
+                TrialNumber=global_trial_number,
                 DifficultyLevel=problem.difficulty_level,
                 Question=problem.question,
                 CorrectAnswer=problem.correct_answer,
+                ProbeAnswer=problem.probe_answer,
+                ProbeMatches=int(problem.probe_matches),
+                CorrectResponse=correct_response,
                 ParticipantAnswer=participant_answer,
                 ResponseTime=""
                 if response_time is None
@@ -558,9 +689,9 @@ class MentalArithmeticTask:
             )
         )
 
-        # EEG Trigger Placeholder: response
         self.logger.log_event(
-            trial_number=trial_number,
+            block_number=block_number,
+            trial_number=global_trial_number,
             difficulty_level=problem.difficulty_level,
             event_name="response",
             event_code=MENTAL_ARITHMETIC["response"],
@@ -568,71 +699,94 @@ class MentalArithmeticTask:
         )
 
         if self.config.inter_trial_seconds > 0:
-            # EEG Trigger Placeholder: inter_trial
             self.logger.log_event(
-                trial_number=trial_number,
+                block_number=block_number,
+                trial_number=global_trial_number,
                 difficulty_level=problem.difficulty_level,
                 event_name="inter_trial",
                 event_code=MENTAL_ARITHMETIC["inter_trial"],
                 timestamp=self.global_clock.getTime(),
             )
-            self._show_blank(self.config.inter_trial_seconds)
+            self._show_break(self.config.inter_trial_seconds)
 
-    def _run_fixation(self) -> None:
+    def _show_question(
+        self,
+        block_number: int,
+        block_trial_number: int,
+        problem: ArithmeticProblem,
+    ) -> None:
         phase_clock = self.core.Clock()
         self.event.clearEvents()
         while phase_clock.getTime() < self.config.fixation_seconds:
             self._ensure_escape_not_pressed()
-            self.fixation_stim.draw()
+            self.title_stim.text = (
+                f"Block {block_number} / {len(self.blocks)}\n"
+                f"Trial {block_trial_number} / {self.config.trials_per_block}\n\n"
+                f"{problem.question}"
+            )
+            self.subtitle_stim.text = "请先在心中完成计算。"
+            self.title_stim.draw()
+            self.subtitle_stim.draw()
             self.window.flip()
 
-    def _collect_answer(
+    def _collect_response(
         self,
+        block_number: int,
+        block_trial_number: int,
         problem: ArithmeticProblem,
-        trial_number: int,
     ) -> tuple[str, float | None]:
-        typed = ""
         self.event.clearEvents()
+        self.mouse.clickReset()
+        previous_buttons = self.mouse.getPressed()
 
         self.title_stim.text = (
-            f"Trial {trial_number} / {len(self.problems)}\n"
-            f"Difficulty: {problem.difficulty_level}\n\n"
-            f"{problem.question}"
+            f"Block {block_number} / {len(self.blocks)}\n"
+            f"Trial {block_trial_number} / {self.config.trials_per_block}"
         )
-        self.subtitle_stim.text = "输入答案后按回车提交。"
-        self.input_stim.text = "_"
+        self.subtitle_stim.text = "蓝色数字若等于正确答案，请按左键；若不等，请按右键。"
+        self.probe_stim.text = str(problem.probe_answer)
 
         self.title_stim.draw()
         self.subtitle_stim.draw()
-        self.input_stim.draw()
+        self.probe_stim.draw()
         self.window.flip()
 
         rt_clock = self.core.Clock()
         while True:
-            keys = self.event.getKeys()
-            for key in keys:
-                normalized = self._normalize_key_name(key)
-                if normalized is None:
-                    continue
-                if normalized == "escape":
-                    raise TaskAborted("Experiment aborted by user.")
-                if normalized == "backspace":
-                    typed = typed[:-1]
-                    continue
-                if normalized in {"return", "num_enter"}:
-                    return typed, rt_clock.getTime()
-                typed += normalized
+            self._ensure_escape_not_pressed()
+            buttons = self.mouse.getPressed()
+            if buttons[0] and not previous_buttons[0]:
+                return "equal", rt_clock.getTime()
+            if buttons[2] and not previous_buttons[2]:
+                return "not_equal", rt_clock.getTime()
+            previous_buttons = buttons
 
             if (
                 self.config.response_timeout_seconds > 0
                 and rt_clock.getTime() >= self.config.response_timeout_seconds
             ):
-                return typed, None
+                return "", None
 
             self.title_stim.draw()
             self.subtitle_stim.draw()
-            self.input_stim.text = typed if typed else "_"
-            self.input_stim.draw()
+            self.probe_stim.draw()
+            self.window.flip()
+
+    def _show_timed_rest(self, completed_block_number: int) -> None:
+        rest_clock = self.core.Clock()
+        self.event.clearEvents()
+        while rest_clock.getTime() < self.config.block_rest_seconds:
+            self._ensure_escape_not_pressed()
+            remaining_seconds = max(0, int(self.config.block_rest_seconds - rest_clock.getTime()))
+            self.title_stim.text = (
+                f"休息阶段\n\n已完成 Block {completed_block_number} / {len(self.blocks)}"
+            )
+            self.subtitle_stim.text = (
+                "请短暂休息，准备进入下一 block。"
+                f"\n剩余约 {remaining_seconds} 秒。"
+            )
+            self.title_stim.draw()
+            self.subtitle_stim.draw()
             self.window.flip()
 
     def _show_completion(self) -> None:
@@ -642,8 +796,8 @@ class MentalArithmeticTask:
                 self.logger.trial_rows
             )
 
-        # EEG Trigger Placeholder: task_end
         self.logger.log_event(
+            block_number="END",
             trial_number="END",
             difficulty_level="NA",
             event_name="task_end",
@@ -686,26 +840,17 @@ class MentalArithmeticTask:
             self.subtitle_stim.draw()
             self.window.flip()
 
-    def _show_blank(self, seconds: float) -> None:
-        blank_clock = self.core.Clock()
+    def _show_break(self, seconds: float) -> None:
+        break_clock = self.core.Clock()
         self.event.clearEvents()
-        while blank_clock.getTime() < seconds:
+        while break_clock.getTime() < seconds:
             self._ensure_escape_not_pressed()
+            self.break_stim.draw()
             self.window.flip()
 
     def _ensure_escape_not_pressed(self) -> None:
         if "escape" in self.event.getKeys(keyList=["escape"]):
             raise TaskAborted("Experiment aborted by user.")
-
-    @staticmethod
-    def _normalize_key_name(key_name: str) -> str | None:
-        if key_name.isdigit():
-            return key_name
-        if key_name.startswith("num_") and key_name[4:].isdigit():
-            return key_name[4:]
-        if key_name in {"backspace", "return", "num_enter", "escape"}:
-            return key_name
-        return None
 
     def _write_generated_problems(self, output_path: Path) -> None:
         rows = [asdict(problem) for problem in self.problems]

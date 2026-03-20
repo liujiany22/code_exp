@@ -1,9 +1,13 @@
 # Mental Arithmetic
 
-This module now implements a discrete arithmetic task with Q-value-based
-difficulty levels for this project.
+This task now uses the planned comparison paradigm:
 
-It is no longer the previous long-block serial subtraction version.
+- black addition problem
+- short `+` break
+- blue candidate answer
+- left / right mouse judgment
+
+It is no longer the earlier keyboard-input answer task.
 
 ## Difficulty Levels
 
@@ -17,28 +21,41 @@ Current Q-value rule:
 - `digit_complexity = digits(left_operand) + digits(right_operand) - 2`
 - `carry_count` = number of carry operations in the addition
 
-The generated questions are currently addition problems, because the requested
-Q-value rule is defined around carry operations.
+The generated materials are addition problems because the requested Q-value rule
+is defined around carry operations.
 
-## Trial Flow
+## Formal Timing Structure
 
-Each trial currently runs as:
+Default formal structure:
 
-1. fixation
-2. arithmetic question display
-3. numeric keyboard response
-4. brief blank inter-trial interval
+- `3` blocks
+- `25` trials per block
+- `30s` rest after block 1 and block 2
 
-At the start of the task, an instruction page explains the input method.
+Each trial runs as:
+
+1. black arithmetic problem display: `6s`
+2. central `+` break: `1s`
+3. blue candidate answer judgment: `4s`
+4. central `+` break: `1s`
+
+Participant response:
+
+- left mouse button: the blue number equals the correct answer
+- right mouse button: the blue number does not equal the correct answer
 
 ## Logs
 
-The main behavior log contains at least:
+The main behavior log now includes at least:
 
+- `BlockNumber`
 - `TrialNumber`
 - `DifficultyLevel`
 - `Question`
 - `CorrectAnswer`
+- `ProbeAnswer`
+- `ProbeMatches`
+- `CorrectResponse`
 - `ParticipantAnswer`
 - `ResponseTime`
 - `QValue`
@@ -54,8 +71,8 @@ The task also writes:
 - `mental_arithmetic_generated_problems.csv`
 - `mental_arithmetic_config.json`
 
-EEG trigger points are kept in the code as comments/placeholders only. This
-task does not currently send real EEG markers.
+EEG trigger points are still placeholders in this task; real EEG sending is not
+yet enabled here.
 
 ## Configuration
 
@@ -65,15 +82,18 @@ Most editable parameters live in:
 
 Important parameters:
 
+- `MENTAL_ARITHMETIC_BLOCK_COUNT`
+- `MENTAL_ARITHMETIC_TRIALS_PER_BLOCK`
+- `MENTAL_ARITHMETIC_BLOCK_REST_SECONDS`
+- `MENTAL_ARITHMETIC_FIXATION_SECONDS`
+- `MENTAL_ARITHMETIC_PRE_RESPONSE_BLANK_SECONDS`
+- `MENTAL_ARITHMETIC_RESPONSE_TIMEOUT_SECONDS`
+- `MENTAL_ARITHMETIC_INTER_TRIAL_SECONDS`
 - `MENTAL_ARITHMETIC_TRIALS_PER_LEVEL`
 - `MENTAL_ARITHMETIC_Q_RULES`
-- `MENTAL_ARITHMETIC_FIXATION_SECONDS`
-- `MENTAL_ARITHMETIC_INTER_TRIAL_SECONDS`
-- `MENTAL_ARITHMETIC_RESPONSE_TIMEOUT_SECONDS`
-- `MENTAL_ARITHMETIC_RANDOM_SEED`
 
-The task now validates these settings at startup, so invalid difficulty names,
-negative timings, or malformed `digit_pairs` fail early with a clear error.
+The task validates these settings at startup, so invalid counts, timings, or
+malformed `digit_pairs` fail early with a clear error.
 
 ## Run
 

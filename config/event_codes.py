@@ -21,9 +21,10 @@ MENTAL_ARITHMETIC = {
     "instruction_start": 32,
     "trial_start": 33,
     "question_onset": 34,
-    "response": 35,
-    "inter_trial": 36,
-    "task_end": 37,
+    "probe_onset": 35,
+    "response": 36,
+    "inter_trial": 37,
+    "task_end": 38,
 }
 
 LEARNING_CYCLE = {

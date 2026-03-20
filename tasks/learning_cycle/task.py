@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from common.data_io import ExperimentContext
+from common.psychopy_compat import configure_macos_psychopy_runtime
 from config.event_codes import LEARNING_CYCLE
 from config.settings import (
     DEFAULT_TRIGGER_WIDTH_MS,
@@ -16,6 +17,7 @@ from config.settings import (
     LEARNING_CYCLE_FONT,
     LEARNING_CYCLE_FORCE_MOUSE_VISIBLE,
     LEARNING_CYCLE_FULLSCREEN,
+    LEARNING_CYCLE_INTER_TRIAL_REST_SECONDS,
     LEARNING_CYCLE_MISSING_VIDEO_SECONDS,
     LEARNING_CYCLE_POST_PHASE_BLANK_SECONDS,
     LEARNING_CYCLE_QUESTIONNAIRE_DIR,
@@ -81,8 +83,12 @@ class LearningCycleConfig:
     expected_trials: int = LEARNING_CYCLE_EXPECTED_TRIALS
     missing_video_seconds: float = LEARNING_CYCLE_MISSING_VIDEO_SECONDS
     post_phase_blank_seconds: float = LEARNING_CYCLE_POST_PHASE_BLANK_SECONDS
+    inter_trial_rest_seconds: float = LEARNING_CYCLE_INTER_TRIAL_REST_SECONDS
     counterbalance_row: int | None = None
     auto_advance: bool = False
+    include_rating_phase: bool = True
+    show_task_intro: bool = True
+    show_completion: bool = True
 
     def __post_init__(self) -> None:
         self.trials_file = Path(self.trials_file)
@@ -93,6 +99,8 @@ class LearningCycleConfig:
             raise ValueError("missing_video_seconds must be non-negative.")
         if self.post_phase_blank_seconds < 0:
             raise ValueError("post_phase_blank_seconds must be non-negative.")
+        if self.inter_trial_rest_seconds < 0:
+            raise ValueError("inter_trial_rest_seconds must be non-negative.")
         if len(self.window_size) != 2 or any(size <= 0 for size in self.window_size):
             raise ValueError("window_size must contain two positive integers.")
 
@@ -246,10 +254,17 @@ class LearningCycleTask:
         task_error: BaseException | None = None
 
         try:
-            self._show_task_intro()
+            if self.config.show_task_intro:
+                self._show_task_intro()
             for trial_number, trial in enumerate(self.ordered_trials, start=1):
                 self._run_trial(trial_number, trial)
-            self._show_completion()
+                if (
+                    trial_number < len(self.ordered_trials)
+                    and self.config.inter_trial_rest_seconds > 0
+                ):
+                    self._run_inter_trial_rest(trial_number)
+            if self.config.show_completion:
+                self._show_completion()
         except BaseException as exc:
             task_error = exc
         finally:
@@ -265,6 +280,7 @@ class LearningCycleTask:
         return output_dir / "learning_cycle_trial_log.csv"
 
     def _prepare_psychopy(self) -> None:
+        configure_macos_psychopy_runtime()
         try:
             from psychopy import core, event, visual  # type: ignore
         except ModuleNotFoundError as exc:
@@ -415,6 +431,9 @@ class LearningCycleTask:
                     f"planned_minutes must be positive for {row.item_id}."
                 )
 
+        if self.config.expected_trials != 6:
+            return
+
         load_counts = {level: 0 for level in EXPECTED_LOAD_LEVELS}
         topic_counts: dict[str, set[str]] = {}
         for row in rows:
@@ -465,7 +484,7 @@ class LearningCycleTask:
         self._wait_for_space(
             main_text=(
                 "视频学习任务\n\n"
-                "共 6 个试次。\n"
+                f"共 {len(self.ordered_trials)} 个试次。\n"
                 "每个试次依次包括：前测问卷、视频播放、主观量表、后测接口。\n"
                 "请根据屏幕提示完成各阶段。"
             ),
@@ -492,18 +511,21 @@ class LearningCycleTask:
 
         video_status, video_duration_seconds = self._run_video_phase(trial_number, trial)
 
-        rating_outcome = self._run_questionnaire_phase(
-            trial_number=trial_number,
-            trial=trial,
-            phase_name="rating",
-            event_code=LEARNING_CYCLE["rating_start"],
-            form_file=trial.rating_form,
-            prompt_title="后测主观量表",
-            prompt_body=(
-                "这里预留给后续接入 NASA-TLX 或简化心理努力量表。\n"
-                "当前版本只保留接口和完成确认。"
-            ),
-        )
+        if self.config.include_rating_phase:
+            rating_outcome = self._run_questionnaire_phase(
+                trial_number=trial_number,
+                trial=trial,
+                phase_name="rating",
+                event_code=LEARNING_CYCLE["rating_start"],
+                form_file=trial.rating_form,
+                prompt_title="后测主观量表",
+                prompt_body=(
+                    "这里预留给后续接入 NASA-TLX 或简化心理努力量表。\n"
+                    "当前版本只保留接口和完成确认。"
+                ),
+            )
+        else:
+            rating_outcome = QuestionnaireOutcome(status="skipped", form_file="")
 
         posttest_outcome = self._run_questionnaire_phase(
             trial_number=trial_number,
@@ -716,6 +738,26 @@ class LearningCycleTask:
             subtitle_text="日志已保存，可继续检查问卷接口和视频素材配置。",
             detail_text="按空格结束。",
         )
+
+    def _run_inter_trial_rest(self, completed_trial_number: int) -> None:
+        rest_seconds = self.config.inter_trial_rest_seconds
+        if rest_seconds <= 0:
+            return
+
+        rest_clock = self.core.Clock()
+        self.event.clearEvents()
+        while rest_clock.getTime() < rest_seconds:
+            self._ensure_escape_not_pressed()
+            remaining_seconds = max(0, int(rest_seconds - rest_clock.getTime()))
+            self._draw_text_page(
+                main_text=(
+                    "组间休息\n\n"
+                    f"已完成 {completed_trial_number} / {len(self.ordered_trials)} 组。"
+                ),
+                subtitle_text="请放松休息，等待下一组视频学习任务。",
+                detail_text=f"剩余约 {remaining_seconds} 秒。",
+            )
+            self.window.flip()
 
     def _wait_for_space(
         self,

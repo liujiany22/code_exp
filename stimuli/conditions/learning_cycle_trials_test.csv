@@ -1,0 +1,3 @@
+base_position,item_id,topic,load_level,video_file,planned_minutes,pretest_form,rating_form,posttest_form,notes
+1,fourier_low_test,傅立叶变换,low,fourier_low_test.mp4,0.5,pretest_fourier_low_test.csv,rating_fourier_low_test.csv,posttest_fourier_low_test.csv,short testing schedule item
+2,statistics_high_test,统计基础,high,statistics_high_test.mp4,0.5,pretest_statistics_high_test.csv,rating_statistics_high_test.csv,posttest_statistics_high_test.csv,short testing schedule item

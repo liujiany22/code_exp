@@ -11,6 +11,9 @@ This task wraps two existing PsychoPy experiments from the reference folder:
 - The original PsychoPy test interfaces are preserved.
 - Participant and session IDs are injected from `code_exp`.
 - Output files are redirected into `code_exp/data/raw_beh/.../wm_pretest/`.
+- Test mode now adds two constraints at the wrapper level:
+  - pass `--pilot` into the generated PsychoPy scripts
+  - cap each subtask with a configurable timeout
 
 ## Environment
 
@@ -62,4 +65,16 @@ export PSYCHOPY_AUDIO_LIB=pygame
 
 ```bash
 python code_exp/launcher.py --task wm_pretest --participant sub01 --session 001
+```
+
+For a short wrapper-level test pass:
+
+```bash
+python code_exp/launcher.py --task wm_pretest --participant test --session 001 --test-mode --auto-advance
+```
+
+Override the default 20-second cap per subtask with:
+
+```bash
+python code_exp/launcher.py --task wm_pretest --wm-timeout-seconds 10
 ```

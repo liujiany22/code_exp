@@ -2,13 +2,242 @@ from __future__ import annotations
 
 import argparse
 
-from config.settings import ensure_directories
+from common.participant_info import collect_participant_info
+from config.settings import (
+    LEARNING_CYCLE_INTER_TRIAL_REST_SECONDS,
+    LEARNING_CYCLE_TEST_EXPECTED_TRIALS,
+    LEARNING_CYCLE_TEST_MISSING_VIDEO_SECONDS,
+    LEARNING_CYCLE_TEST_POST_PHASE_BLANK_SECONDS,
+    LEARNING_CYCLE_TEST_TRIALS_FILE,
+    MENTAL_ARITHMETIC_TEST_BLOCK_COUNT,
+    MENTAL_ARITHMETIC_TEST_BLOCK_REST_SECONDS,
+    MENTAL_ARITHMETIC_TEST_FIXATION_SECONDS,
+    MENTAL_ARITHMETIC_TEST_INTER_TRIAL_SECONDS,
+    MENTAL_ARITHMETIC_TEST_PRE_RESPONSE_BLANK_SECONDS,
+    MENTAL_ARITHMETIC_TEST_RESPONSE_TIMEOUT_SECONDS,
+    MENTAL_ARITHMETIC_TEST_TRIALS_PER_BLOCK,
+    MENTAL_ARITHMETIC_TEST_TRIALS_PER_LEVEL,
+    REST_TEST_CYCLE_COUNT,
+    REST_TEST_EYES_CLOSED_SECONDS,
+    REST_TEST_EYES_OPEN_SECONDS,
+    WM_PRETEST_TEST_TASK_TIMEOUT_SECONDS,
+    ensure_directories,
+)
 from common.data_io import build_context
-from tasks import TASK_REGISTRY
+from tasks import DEFAULT_TASK_SLUG, TASK_MAP, TASK_REGISTRY
 from tasks.learning_cycle.task import LearningCycleConfig
 from tasks.mental_arithmetic.task import MentalArithmeticConfig
+from tasks.protocol.task import ProtocolConfig
 from tasks.resting_state.task import RestingStateConfig
 from tasks.wm_pretest.task import WMPretestConfig
+
+def _build_task_map() -> dict[str, object]:
+    return {slug: spec.runner for slug, spec in TASK_MAP.items()}
+
+
+def _build_resting_state_config(args: argparse.Namespace) -> RestingStateConfig:
+    default_config = RestingStateConfig()
+    default_eyes_open = (
+        REST_TEST_EYES_OPEN_SECONDS if args.test_mode else default_config.eyes_open_seconds
+    )
+    default_eyes_closed = (
+        REST_TEST_EYES_CLOSED_SECONDS
+        if args.test_mode
+        else default_config.eyes_closed_seconds
+    )
+    default_cycles = REST_TEST_CYCLE_COUNT if args.test_mode else default_config.cycles
+    return RestingStateConfig(
+        eyes_open_seconds=default_eyes_open if args.eyes_open is None else args.eyes_open,
+        eyes_closed_seconds=(
+            default_eyes_closed if args.eyes_closed is None else args.eyes_closed
+        ),
+        cycles=default_cycles if args.cycles is None else args.cycles,
+        fullscreen=default_config.fullscreen,
+        allow_gui=default_config.allow_gui,
+        window_size=default_config.window_size,
+        background_color=default_config.background_color,
+        text_color=default_config.text_color,
+        font=default_config.font,
+        auto_advance=args.auto_advance,
+    )
+
+
+def _build_wm_pretest_config(args: argparse.Namespace) -> WMPretestConfig:
+    default_task_timeout_seconds = (
+        WM_PRETEST_TEST_TASK_TIMEOUT_SECONDS if args.test_mode else None
+    )
+    return WMPretestConfig(
+        auto_advance=args.auto_advance,
+        pilot_mode=args.test_mode,
+        task_timeout_seconds=(
+            default_task_timeout_seconds
+            if args.wm_timeout_seconds is None
+            else args.wm_timeout_seconds
+        ),
+    )
+
+
+def _build_mental_arithmetic_config(
+    args: argparse.Namespace,
+) -> MentalArithmeticConfig:
+    default_config = MentalArithmeticConfig()
+    default_fixation_seconds = (
+        MENTAL_ARITHMETIC_TEST_FIXATION_SECONDS
+        if args.test_mode
+        else default_config.fixation_seconds
+    )
+    default_inter_trial_seconds = (
+        MENTAL_ARITHMETIC_TEST_INTER_TRIAL_SECONDS
+        if args.test_mode
+        else default_config.inter_trial_seconds
+    )
+    default_response_timeout_seconds = (
+        MENTAL_ARITHMETIC_TEST_RESPONSE_TIMEOUT_SECONDS
+        if args.test_mode
+        else default_config.response_timeout_seconds
+    )
+    default_pre_response_blank_seconds = (
+        MENTAL_ARITHMETIC_TEST_PRE_RESPONSE_BLANK_SECONDS
+        if args.test_mode
+        else default_config.pre_response_blank_seconds
+    )
+    default_trial_counts = (
+        dict(MENTAL_ARITHMETIC_TEST_TRIALS_PER_LEVEL)
+        if args.test_mode
+        else dict(default_config.trial_counts)
+    )
+    return MentalArithmeticConfig(
+        fullscreen=False if args.ma_windowed else default_config.fullscreen,
+        allow_gui=False if args.ma_no_gui else default_config.allow_gui,
+        force_mouse_visible=default_config.force_mouse_visible,
+        window_size=default_config.window_size,
+        background_color=default_config.background_color,
+        text_color=default_config.text_color,
+        font=default_config.font,
+        fixation_seconds=(
+            default_fixation_seconds
+            if args.ma_fixation_seconds is None
+            else args.ma_fixation_seconds
+        ),
+        pre_response_blank_seconds=default_pre_response_blank_seconds,
+        inter_trial_seconds=(
+            default_inter_trial_seconds
+            if args.ma_inter_trial_seconds is None
+            else args.ma_inter_trial_seconds
+        ),
+        response_timeout_seconds=(
+            default_response_timeout_seconds
+            if args.ma_response_timeout_seconds is None
+            else args.ma_response_timeout_seconds
+        ),
+        random_seed=default_config.random_seed if args.ma_seed is None else args.ma_seed,
+        block_count=(
+            MENTAL_ARITHMETIC_TEST_BLOCK_COUNT
+            if args.test_mode
+            else default_config.block_count
+        ),
+        trials_per_block=(
+            MENTAL_ARITHMETIC_TEST_TRIALS_PER_BLOCK
+            if args.test_mode
+            else default_config.trials_per_block
+        ),
+        block_rest_seconds=(
+            MENTAL_ARITHMETIC_TEST_BLOCK_REST_SECONDS
+            if args.test_mode
+            else default_config.block_rest_seconds
+        ),
+        trial_counts={
+            "QE": (
+                default_trial_counts["QE"]
+                if args.ma_qe_count is None
+                else args.ma_qe_count
+            ),
+            "QM": (
+                default_trial_counts["QM"]
+                if args.ma_qm_count is None
+                else args.ma_qm_count
+            ),
+            "QH": (
+                default_trial_counts["QH"]
+                if args.ma_qh_count is None
+                else args.ma_qh_count
+            ),
+        },
+        difficulty_rule_specs=default_config.difficulty_rule_specs,
+        auto_advance=args.auto_advance,
+    )
+
+
+def _build_learning_cycle_config(args: argparse.Namespace) -> LearningCycleConfig:
+    default_config = LearningCycleConfig()
+    default_trials_file = (
+        LEARNING_CYCLE_TEST_TRIALS_FILE if args.test_mode else default_config.trials_file
+    )
+    default_expected_trials = (
+        LEARNING_CYCLE_TEST_EXPECTED_TRIALS
+        if args.test_mode
+        else default_config.expected_trials
+    )
+    default_missing_video_seconds = (
+        LEARNING_CYCLE_TEST_MISSING_VIDEO_SECONDS
+        if args.test_mode
+        else default_config.missing_video_seconds
+    )
+    default_post_phase_blank_seconds = (
+        LEARNING_CYCLE_TEST_POST_PHASE_BLANK_SECONDS
+        if args.test_mode
+        else default_config.post_phase_blank_seconds
+    )
+    return LearningCycleConfig(
+        trials_file=default_trials_file if args.lc_trials_file is None else args.lc_trials_file,
+        questionnaire_dir=default_config.questionnaire_dir,
+        fullscreen=False if args.lc_windowed else default_config.fullscreen,
+        allow_gui=False if args.lc_no_gui else default_config.allow_gui,
+        force_mouse_visible=default_config.force_mouse_visible,
+        window_size=default_config.window_size,
+        background_color=default_config.background_color,
+        text_color=default_config.text_color,
+        font=default_config.font,
+        expected_trials=default_expected_trials,
+        missing_video_seconds=(
+            default_missing_video_seconds
+            if args.lc_missing_video_seconds is None
+            else args.lc_missing_video_seconds
+        ),
+        post_phase_blank_seconds=default_post_phase_blank_seconds,
+        inter_trial_rest_seconds=(
+            0.0 if args.test_mode else LEARNING_CYCLE_INTER_TRIAL_REST_SECONDS
+        ),
+        counterbalance_row=args.lc_counterbalance_row,
+        auto_advance=args.auto_advance,
+    )
+
+
+def _build_protocol_config(args: argparse.Namespace) -> ProtocolConfig:
+    return ProtocolConfig(
+        test_mode=args.test_mode,
+        auto_advance=args.auto_advance,
+    )
+
+
+def _build_task_config(task_name: str, args: argparse.Namespace):
+    if task_name == "protocol":
+        return _build_protocol_config(args)
+    if task_name == "resting_state":
+        return _build_resting_state_config(args)
+    if task_name == "wm_pretest":
+        return _build_wm_pretest_config(args)
+    if task_name == "mental_arithmetic":
+        return _build_mental_arithmetic_config(args)
+    if task_name == "learning_cycle":
+        return _build_learning_cycle_config(args)
+    raise ValueError(f"Unsupported task: {task_name}")
+
+
+def _resolve_task_sequence(task_name: str | None) -> list[str]:
+    if task_name in (None, "all"):
+        return [DEFAULT_TASK_SLUG]
+    return [task_name]
 
 
 def main() -> None:
@@ -16,8 +245,8 @@ def main() -> None:
     parser.add_argument("--list", action="store_true", help="List registered tasks")
     parser.add_argument(
         "--task",
-        choices=["resting_state", "wm_pretest", "mental_arithmetic", "learning_cycle"],
-        help="Run a single task",
+        choices=["all", *TASK_MAP.keys()],
+        help="Run the full experiment or a single task",
     )
     parser.add_argument(
         "--participant",
@@ -25,14 +254,34 @@ def main() -> None:
         help="Participant identifier",
     )
     parser.add_argument(
+        "--name",
+        default="",
+        help="Participant name",
+    )
+    parser.add_argument(
+        "--age",
+        default="",
+        help="Participant age",
+    )
+    parser.add_argument(
         "--session",
         default="001",
         help="Session identifier",
     )
     parser.add_argument(
+        "--skip-subject-dialog",
+        action="store_true",
+        help="Use CLI participant fields directly without showing the startup dialog",
+    )
+    parser.add_argument(
         "--auto-advance",
         action="store_true",
         help="Skip manual Enter prompts for scripted tests",
+    )
+    parser.add_argument(
+        "--test-mode",
+        action="store_true",
+        help="Greatly shrink all tasks for end-to-end testing",
     )
     parser.add_argument(
         "--eyes-open",
@@ -51,6 +300,12 @@ def main() -> None:
         type=int,
         default=None,
         help="Override resting-state cycle count",
+    )
+    parser.add_argument(
+        "--wm-timeout-seconds",
+        type=float,
+        default=None,
+        help="Cap each working-memory pretest subtask after this many seconds",
     )
     parser.add_argument(
         "--ma-qe-count",
@@ -136,7 +391,9 @@ def main() -> None:
     ensure_directories()
     context = None
     try:
-        if args.list or not args.task:
+        task_map = _build_task_map()
+
+        if args.list:
             print(f"Participant: {args.participant}")
             print(f"Session: {args.session}")
             print("Task order:")
@@ -145,133 +402,38 @@ def main() -> None:
                 print(f"{index}. {task.name}")
 
             print()
-
-        task_map = {
-            "resting_state": TASK_REGISTRY[0].runner,
-            "wm_pretest": TASK_REGISTRY[1].runner,
-            "mental_arithmetic": TASK_REGISTRY[2].runner,
-            "learning_cycle": TASK_REGISTRY[3].runner,
-        }
-
-        if not args.task:
-            print("Framework ready. Use --task to run a task.")
             return
 
-        context = build_context(
+        task_sequence = _resolve_task_sequence(args.task)
+        participant_info = collect_participant_info(
             participant_id=args.participant,
             session_id=args.session,
+            name=args.name,
+            age=args.age,
+            skip_dialog=args.skip_subject_dialog,
         )
 
-        if args.task == "resting_state":
-            config = RestingStateConfig(
-                eyes_open_seconds=args.eyes_open
-                if args.eyes_open is not None
-                else RestingStateConfig.eyes_open_seconds,
-                eyes_closed_seconds=args.eyes_closed
-                if args.eyes_closed is not None
-                else RestingStateConfig.eyes_closed_seconds,
-                cycles=args.cycles if args.cycles is not None else RestingStateConfig.cycles,
-                auto_advance=args.auto_advance,
+        context = build_context(
+            participant_info=participant_info,
+        )
+
+        print(
+            "Participant info: "
+            f"name={participant_info.name}, "
+            f"participant_id={participant_info.participant_id}, "
+            f"age={participant_info.age}, "
+            f"session={participant_info.session_id}"
+        )
+
+        if args.test_mode:
+            print("Test mode enabled: using shortened task settings.")
+
+        for task_name in task_sequence:
+            print(f"Running task: {task_name}")
+            task_map[task_name](
+                context,
+                config=_build_task_config(task_name, args),
             )
-            task_map[args.task](context, config=config)
-        else:
-            if args.task == "wm_pretest":
-                task_map[args.task](
-                    context,
-                    config=WMPretestConfig(auto_advance=args.auto_advance),
-                )
-            elif args.task == "mental_arithmetic":
-                default_config = MentalArithmeticConfig()
-                task_map[args.task](
-                    context,
-                    config=MentalArithmeticConfig(
-                        fullscreen=(
-                            False if args.ma_windowed else default_config.fullscreen
-                        ),
-                        allow_gui=(
-                            False if args.ma_no_gui else default_config.allow_gui
-                        ),
-                        force_mouse_visible=default_config.force_mouse_visible,
-                        window_size=default_config.window_size,
-                        background_color=default_config.background_color,
-                        text_color=default_config.text_color,
-                        font=default_config.font,
-                        fixation_seconds=(
-                            default_config.fixation_seconds
-                            if args.ma_fixation_seconds is None
-                            else args.ma_fixation_seconds
-                        ),
-                        inter_trial_seconds=(
-                            default_config.inter_trial_seconds
-                            if args.ma_inter_trial_seconds is None
-                            else args.ma_inter_trial_seconds
-                        ),
-                        response_timeout_seconds=(
-                            default_config.response_timeout_seconds
-                            if args.ma_response_timeout_seconds is None
-                            else args.ma_response_timeout_seconds
-                        ),
-                        random_seed=(
-                            default_config.random_seed
-                            if args.ma_seed is None
-                            else args.ma_seed
-                        ),
-                        trial_counts={
-                            "QE": (
-                                default_config.trial_counts["QE"]
-                                if args.ma_qe_count is None
-                                else args.ma_qe_count
-                            ),
-                            "QM": (
-                                default_config.trial_counts["QM"]
-                                if args.ma_qm_count is None
-                                else args.ma_qm_count
-                            ),
-                            "QH": (
-                                default_config.trial_counts["QH"]
-                                if args.ma_qh_count is None
-                                else args.ma_qh_count
-                            ),
-                        },
-                        difficulty_rule_specs=default_config.difficulty_rule_specs,
-                        auto_advance=args.auto_advance,
-                    ),
-                )
-            elif args.task == "learning_cycle":
-                default_config = LearningCycleConfig()
-                task_map[args.task](
-                    context,
-                    config=LearningCycleConfig(
-                        trials_file=(
-                            default_config.trials_file
-                            if args.lc_trials_file is None
-                            else args.lc_trials_file
-                        ),
-                        questionnaire_dir=default_config.questionnaire_dir,
-                        fullscreen=(
-                            False if args.lc_windowed else default_config.fullscreen
-                        ),
-                        allow_gui=(
-                            False if args.lc_no_gui else default_config.allow_gui
-                        ),
-                        force_mouse_visible=default_config.force_mouse_visible,
-                        window_size=default_config.window_size,
-                        background_color=default_config.background_color,
-                        text_color=default_config.text_color,
-                        font=default_config.font,
-                        expected_trials=default_config.expected_trials,
-                        missing_video_seconds=(
-                            default_config.missing_video_seconds
-                            if args.lc_missing_video_seconds is None
-                            else args.lc_missing_video_seconds
-                        ),
-                        post_phase_blank_seconds=default_config.post_phase_blank_seconds,
-                        counterbalance_row=args.lc_counterbalance_row,
-                        auto_advance=args.auto_advance,
-                    ),
-                )
-            else:
-                task_map[args.task](context)
     except Exception as exc:
         print(f"Task failed: {exc}")
         raise SystemExit(1) from exc

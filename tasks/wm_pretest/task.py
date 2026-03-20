@@ -3,11 +3,14 @@ from __future__ import annotations
 import csv
 import os
 import sys
+import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
 from common.data_io import ExperimentContext
 from common.external_task import ExternalTaskSpec, load_module_from_path
+from common.psychopy_compat import configure_macos_psychopy_runtime
 from common.ui import show_message, wait_for_continue
 from config.event_codes import WM_PRETEST
 from config.settings import (
@@ -20,12 +23,48 @@ from config.settings import (
     WM_PRETEST_FORCE_MOUSE_VISIBLE,
     WM_PRETEST_KEYBOARD_BACKEND,
     WM_PRETEST_MACOS_WINDOWED,
+    WM_PRETEST_TEST_TASK_TIMEOUT_SECONDS,
 )
 
 
 @dataclass(frozen=True)
 class WMPretestConfig:
     auto_advance: bool = False
+    pilot_mode: bool = False
+    task_timeout_seconds: float | None = None
+    selected_task_names: tuple[str, ...] = ("digit_span", "corsi_blocks")
+    show_wrapper_intro: bool = True
+    show_wrapper_completion: bool = True
+
+    def __post_init__(self) -> None:
+        if self.task_timeout_seconds is not None and self.task_timeout_seconds <= 0:
+            raise ValueError("task_timeout_seconds must be positive when provided.")
+        valid_task_names = {spec.name for spec in TASK_SPECS}
+        unknown_task_names = set(self.selected_task_names) - valid_task_names
+        if unknown_task_names:
+            raise ValueError(
+                f"Unsupported wm_pretest task names: {sorted(unknown_task_names)}."
+            )
+
+
+@dataclass
+class TaskTimeoutController:
+    timeout_seconds: float | None
+    start_time: float = 0.0
+    timed_out: bool = False
+
+    def start(self) -> None:
+        self.start_time = time.monotonic()
+
+    def should_timeout(self) -> bool:
+        if self.timeout_seconds is None or self.timed_out:
+            return False
+        if self.start_time <= 0:
+            return False
+        if (time.monotonic() - self.start_time) < self.timeout_seconds:
+            return False
+        self.timed_out = True
+        return True
 
 
 TASK_SPECS = [
@@ -108,17 +147,7 @@ def _install_keyboard_compatibility(module: object) -> None:
 
 
 def _configure_macos_runtime() -> None:
-    if sys.platform != "darwin":
-        return
-
-    try:
-        import pyglet  # type: ignore
-    except ModuleNotFoundError:
-        return
-
-    # Pyglet documents an alternative event loop for macOS because the
-    # standard loop can randomly break or crash, especially on ARM Macs.
-    pyglet.options["osx_alt_loop"] = True
+    configure_macos_psychopy_runtime()
 
 
 def _install_window_compatibility(module: object) -> None:
@@ -181,6 +210,40 @@ def _install_window_compatibility(module: object) -> None:
     module.setupWindow = setup_window_with_defaults
 
 
+def _install_task_timeout(
+    module: object,
+    controller: TaskTimeoutController,
+) -> None:
+    if controller.timeout_seconds is None:
+        return
+
+    default_keyboard = module.deviceManager.getDevice("defaultKeyboard")
+    if default_keyboard is None:
+        return
+
+    original_get_keys = default_keyboard.getKeys
+
+    def get_keys_with_timeout(*args, **kwargs):
+        key_list = kwargs.get("keyList")
+        if key_list is None and args:
+            key_list = args[0]
+        if controller.should_timeout() and (key_list is None or "escape" in key_list):
+            return ["escape"]
+        return original_get_keys(*args, **kwargs)
+
+    default_keyboard.getKeys = get_keys_with_timeout
+
+
+@contextmanager
+def _temporary_cli_args(extra_args: list[str]):
+    original_argv = sys.argv[:]
+    try:
+        sys.argv = original_argv + [arg for arg in extra_args if arg not in original_argv]
+        yield
+    finally:
+        sys.argv = original_argv
+
+
 def _write_manifest(output_path: Path, rows: list[dict[str, str]]) -> None:
     with output_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
@@ -194,6 +257,7 @@ def _write_manifest(output_path: Path, rows: list[dict[str, str]]) -> None:
 def _run_external_psychopy_task(
     context: ExperimentContext,
     spec: ExternalTaskSpec,
+    config: WMPretestConfig,
 ) -> dict[str, str]:
     module_name = f"wm_pretest_{spec.name}"
     task_output_dir = context.output_dir / "wm_pretest" / spec.name
@@ -201,7 +265,9 @@ def _run_external_psychopy_task(
 
     _emit_boundary(context, f"{spec.name}_start", spec.task_code_start)
     _configure_macos_runtime()
-    module = load_module_from_path(module_name=module_name, script_path=spec.script_path)
+    cli_args = ["--pilot"] if config.pilot_mode else []
+    with _temporary_cli_args(cli_args):
+        module = load_module_from_path(module_name=module_name, script_path=spec.script_path)
     _install_keyboard_compatibility(module)
     _install_window_compatibility(module)
     exp_info = _prepare_exp_info(module, context)
@@ -212,6 +278,7 @@ def _run_external_psychopy_task(
     this_exp = None
     win = None
     status = "completed"
+    timeout_controller = TaskTimeoutController(timeout_seconds=config.task_timeout_seconds)
 
     try:
         # The exported PsychoPy scripts concatenate `dataDir + os.sep + filename`,
@@ -220,12 +287,16 @@ def _run_external_psychopy_task(
         module.setupLogging(filename=this_exp.dataFileName)
         win = module.setupWindow(expInfo=exp_info)
         module.setupDevices(expInfo=exp_info, thisExp=this_exp, win=win)
+        _install_task_timeout(module, timeout_controller)
+        timeout_controller.start()
         module.run(
             expInfo=exp_info,
             thisExp=this_exp,
             win=win,
             globalClock="float",
         )
+        if timeout_controller.timed_out:
+            status = "timed_out"
     except BaseException:
         status = "failed"
         raise
@@ -254,28 +325,44 @@ def run(
     config = config or WMPretestConfig()
     psychopy_version, interpreter_path = _check_environment()
 
-    show_message("Working Memory Pretest")
-    show_message(
-        f"PsychoPy version: {psychopy_version} "
-        f"(recommended: {PSYCHOPY_MIN_VERSION})"
-    )
-    show_message(f"Python interpreter: {interpreter_path}")
-    wait_for_continue(
-        "The task will run digit span first, then Corsi blocks.",
-        auto_advance=config.auto_advance,
-    )
+    selected_specs = [spec for spec in TASK_SPECS if spec.name in config.selected_task_names]
+
+    if config.show_wrapper_intro:
+        show_message("Working Memory Pretest")
+        show_message(
+            f"PsychoPy version: {psychopy_version} "
+            f"(recommended: {PSYCHOPY_MIN_VERSION})"
+        )
+        show_message(f"Python interpreter: {interpreter_path}")
+        selected_names = ", then ".join(spec.name for spec in selected_specs)
+        wait_for_continue(
+            (
+                f"The task will run {selected_names}."
+                if not config.pilot_mode
+                else (
+                    f"The task will run {selected_names} in pilot mode."
+                    if config.task_timeout_seconds is None
+                    else (
+                        f"The task will run {selected_names} in pilot mode, "
+                        f"with a {config.task_timeout_seconds:.0f}s cap for each task."
+                    )
+                )
+            ),
+            auto_advance=config.auto_advance,
+        )
 
     _emit_boundary(context, "task_start", WM_PRETEST["task_start"])
     manifest_rows: list[dict[str, str]] = []
 
     try:
-        for spec in TASK_SPECS:
+        for spec in selected_specs:
             show_message(f"Launching {spec.name} interface...")
-            manifest_rows.append(_run_external_psychopy_task(context, spec))
+            manifest_rows.append(_run_external_psychopy_task(context, spec, config))
     finally:
         _emit_boundary(context, "task_end", WM_PRETEST["task_end"])
 
     manifest_path = context.output_dir / "wm_pretest_manifest.csv"
     _write_manifest(manifest_path, manifest_rows)
-    show_message(f"Working memory pretest manifest saved to: {manifest_path}")
+    if config.show_wrapper_completion:
+        show_message(f"Working memory pretest manifest saved to: {manifest_path}")
     return manifest_path
