@@ -5,7 +5,7 @@ from __future__ import annotations
 # still take priority over these values when both are present.
 
 # EEG trigger settings
-TRIGGER_MODE = "dummy"  # "dummy", "serial", or "neuracle_serial"
+TRIGGER_MODE = "neuracle_serial"  # "dummy", "serial", or "neuracle_serial"
 TRIGGER_PORT = "COM4"
 TRIGGER_BAUDRATE = 115200
 TRIGGER_TIMEOUT_SECONDS = 1.0
