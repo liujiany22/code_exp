@@ -59,6 +59,44 @@ def get_primary_screen_size() -> tuple[int, int] | None:
         return None
 
 
+def get_window_aspect_ratio(window, fallback: float = 1.6) -> float:
+    try:
+        width, height = getattr(window, "size", (0, 0))
+        width = float(width)
+        height = float(height)
+    except Exception:
+        return fallback
+
+    if width <= 0 or height <= 0:
+        return fallback
+    return width / height
+
+
+def get_adaptive_text_height(
+    window,
+    base_height: float,
+    *,
+    reference_aspect: float = 1.6,
+    min_scale: float = 0.78,
+) -> float:
+    aspect = get_window_aspect_ratio(window, fallback=reference_aspect)
+    scale = aspect / reference_aspect
+    scale = min(1.0, max(min_scale, scale))
+    return base_height * scale
+
+
+def get_adaptive_wrap_width(
+    window,
+    base_wrap_width: float,
+    *,
+    horizontal_margin_ratio: float = 0.88,
+    min_wrap_width: float = 0.9,
+) -> float:
+    aspect = get_window_aspect_ratio(window)
+    available_width = aspect * horizontal_margin_ratio
+    return min(base_wrap_width, max(min_wrap_width, available_width))
+
+
 def build_window_kwargs(
     *,
     size: tuple[int, int],

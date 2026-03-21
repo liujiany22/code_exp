@@ -11,6 +11,8 @@ from common.data_io import ExperimentContext
 from common.psychopy_compat import (
     build_window_kwargs,
     configure_macos_psychopy_runtime,
+    get_adaptive_text_height,
+    get_adaptive_wrap_width,
     get_or_create_visual_window,
 )
 from config.event_codes import MENTAL_ARITHMETIC
@@ -520,6 +522,10 @@ class MentalArithmeticTask:
         self._force_mouse_visible()
         self.global_clock = core.Clock()
         self.mouse = event.Mouse(win=self.window)
+        title_height = get_adaptive_text_height(self.window, 0.05)
+        subtitle_height = get_adaptive_text_height(self.window, 0.03)
+        summary_height = get_adaptive_text_height(self.window, 0.04)
+        text_wrap_width = get_adaptive_wrap_width(self.window, 1.4)
 
         self.title_stim = visual.TextStim(
             win=self.window,
@@ -527,8 +533,8 @@ class MentalArithmeticTask:
             font=self.config.font,
             color=self.config.text_color,
             colorSpace="named",
-            height=0.05,
-            wrapWidth=1.4,
+            height=title_height,
+            wrapWidth=text_wrap_width,
         )
         self.subtitle_stim = visual.TextStim(
             win=self.window,
@@ -536,9 +542,9 @@ class MentalArithmeticTask:
             font=self.config.font,
             color=self.config.text_color,
             colorSpace="named",
-            height=0.03,
+            height=subtitle_height,
             pos=(0, -0.34),
-            wrapWidth=1.4,
+            wrapWidth=text_wrap_width,
         )
         self.probe_stim = visual.TextStim(
             win=self.window,
@@ -555,8 +561,8 @@ class MentalArithmeticTask:
             font=self.config.font,
             color=self.config.text_color,
             colorSpace="named",
-            height=0.04,
-            wrapWidth=1.4,
+            height=summary_height,
+            wrapWidth=text_wrap_width,
         )
         self.break_stim = visual.TextStim(
             win=self.window,

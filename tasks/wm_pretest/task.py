@@ -12,6 +12,8 @@ from common.data_io import ExperimentContext
 from common.external_task import ExternalTaskSpec, load_module_from_path
 from common.psychopy_compat import (
     configure_macos_psychopy_runtime,
+    get_adaptive_text_height,
+    get_adaptive_wrap_width,
     get_primary_screen_size,
 )
 from common.ui import show_message, wait_for_continue
@@ -226,6 +228,42 @@ def _install_window_compatibility(module: object) -> None:
     module.setupWindow = setup_window_with_defaults
 
 
+def _install_text_layout_compatibility(module: object) -> None:
+    original_text_stim = module.visual.TextStim
+
+    def adaptive_text_stim(*args, **kwargs):
+        win = kwargs.get("win")
+        text = kwargs.get("text", "")
+        height = kwargs.get("height")
+        wrap_width = kwargs.get("wrapWidth")
+
+        if (
+            win is not None
+            and isinstance(text, str)
+            and isinstance(height, (int, float))
+            and float(height) <= 0.05
+            and _should_constrain_text(text)
+        ):
+            kwargs["height"] = get_adaptive_text_height(win, float(height))
+            base_wrap_width = 1.2 if wrap_width in (None, "") else float(wrap_width)
+            kwargs["wrapWidth"] = get_adaptive_wrap_width(win, base_wrap_width)
+
+        return original_text_stim(*args, **kwargs)
+
+    module.visual.TextStim = adaptive_text_stim
+
+
+def _should_constrain_text(text: str) -> bool:
+    normalized = text.strip()
+    if not normalized:
+        return False
+    if "\n" in normalized:
+        return True
+    if len(normalized) >= 10:
+        return True
+    return any(marker in normalized for marker in ("，", "。", "：", "；", "?", "！"))
+
+
 def _install_task_timeout(
     module: object,
     controller: TaskTimeoutController,
@@ -286,6 +324,7 @@ def _run_external_psychopy_task(
         module = load_module_from_path(module_name=module_name, script_path=spec.script_path)
     _install_keyboard_compatibility(module)
     _install_window_compatibility(module)
+    _install_text_layout_compatibility(module)
     exp_info = _prepare_exp_info(module, context)
 
     # Match the generated scripts' expectation for the PTB audio backend when present.

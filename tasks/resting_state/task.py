@@ -10,6 +10,8 @@ from common.data_io import ExperimentContext
 from common.psychopy_compat import (
     build_window_kwargs,
     configure_macos_psychopy_runtime,
+    get_adaptive_text_height,
+    get_adaptive_wrap_width,
     get_or_create_visual_window,
 )
 from config.event_codes import RESTING_STATE
@@ -198,14 +200,18 @@ class RestingStateTask:
             ),
         )
         self.context.psychopy_window = self.window
+        title_height = get_adaptive_text_height(self.window, 0.05)
+        subtitle_height = get_adaptive_text_height(self.window, 0.03)
+        detail_height = get_adaptive_text_height(self.window, 0.028)
+        text_wrap_width = get_adaptive_wrap_width(self.window, 1.5)
         self.title_stim = visual.TextStim(
             win=self.window,
             text="",
             font=self.config.font,
             color=self.config.text_color,
             colorSpace="named",
-            height=0.05,
-            wrapWidth=1.5,
+            height=title_height,
+            wrapWidth=text_wrap_width,
         )
         self.subtitle_stim = visual.TextStim(
             win=self.window,
@@ -213,9 +219,9 @@ class RestingStateTask:
             font=self.config.font,
             color=self.config.text_color,
             colorSpace="named",
-            height=0.03,
+            height=subtitle_height,
             pos=(0, -0.26),
-            wrapWidth=1.5,
+            wrapWidth=text_wrap_width,
         )
         self.detail_stim = visual.TextStim(
             win=self.window,
@@ -223,9 +229,9 @@ class RestingStateTask:
             font=self.config.font,
             color=self.config.text_color,
             colorSpace="named",
-            height=0.028,
+            height=detail_height,
             pos=(0, -0.38),
-            wrapWidth=1.5,
+            wrapWidth=text_wrap_width,
         )
         self.fixation_stim = visual.TextStim(
             win=self.window,

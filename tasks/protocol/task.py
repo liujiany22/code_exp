@@ -12,6 +12,8 @@ from common.data_io import ExperimentContext
 from common.psychopy_compat import (
     build_window_kwargs,
     configure_macos_psychopy_runtime,
+    get_adaptive_text_height,
+    get_adaptive_wrap_width,
     get_or_create_visual_window,
 )
 from config.settings import (
@@ -426,15 +428,17 @@ class ProtocolTask:
         )
         prompt_text = self._extract_bottom_prompt(detail)
         body_stims = self._build_stage_stims(win, visual, body_lines)
+        prompt_height = get_adaptive_text_height(win, 0.036)
+        prompt_wrap_width = get_adaptive_wrap_width(win, 1.5)
         prompt_stim = visual.TextStim(
             win=win,
             text=prompt_text,
             font=self.config.font,
             color=self.config.text_color,
             colorSpace="named",
-            height=0.036,
+            height=prompt_height,
             pos=(0, -0.34),
-            wrapWidth=1.5,
+            wrapWidth=prompt_wrap_width,
         )
 
         event.clearEvents()
@@ -587,7 +591,9 @@ class ProtocolTask:
         if not lines:
             return []
 
-        line_gap = 0.075
+        line_height = get_adaptive_text_height(win, 0.044)
+        line_gap = line_height * (0.075 / 0.044)
+        line_wrap_width = get_adaptive_wrap_width(win, 1.5)
         center_y = 0.08
         start_y = center_y + ((len(lines) - 1) * line_gap / 2)
         stims = []
@@ -599,9 +605,9 @@ class ProtocolTask:
                     font=self.config.font,
                     color=color,
                     colorSpace="named",
-                    height=0.044,
+                    height=line_height,
                     pos=(0, start_y - index * line_gap),
-                    wrapWidth=1.5,
+                    wrapWidth=line_wrap_width,
                 )
             )
         return stims
