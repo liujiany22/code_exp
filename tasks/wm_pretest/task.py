@@ -13,7 +13,6 @@ from common.external_task import ExternalTaskSpec, load_module_from_path
 from common.psychopy_compat import (
     configure_macos_psychopy_runtime,
     get_primary_screen_size,
-    safe_close_window,
 )
 from common.ui import show_message, wait_for_continue
 from config.event_codes import WM_PRETEST
@@ -197,6 +196,11 @@ def _install_window_compatibility(module: object) -> None:
             screen_size = get_primary_screen_size()
             if screen_size is not None:
                 module._winSize = list(screen_size)
+        if win is not None:
+            try:
+                win.colorSpace = "rgb"
+            except Exception:
+                pass
 
         created_window = original_setup_window(expInfo=expInfo, win=win)
         force_mouse_visible(created_window)
@@ -297,7 +301,8 @@ def _run_external_psychopy_task(
         # so pass a plain string for compatibility with those generated files.
         this_exp = module.setupData(expInfo=exp_info, dataDir=os.fspath(task_output_dir))
         module.setupLogging(filename=this_exp.dataFileName)
-        win = module.setupWindow(expInfo=exp_info)
+        win = module.setupWindow(expInfo=exp_info, win=context.psychopy_window)
+        context.psychopy_window = win
         module.setupDevices(expInfo=exp_info, thisExp=this_exp, win=win)
         _install_task_timeout(module, timeout_controller)
         timeout_controller.start()
@@ -318,8 +323,6 @@ def _run_external_psychopy_task(
             if hasattr(module, "endExperiment"):
                 module.endExperiment(thisExp=this_exp, win=win)
             this_exp.abort()
-        if win is not None:
-            safe_close_window(win)
         _emit_boundary(context, f"{spec.name}_end", spec.task_code_end)
 
     return {

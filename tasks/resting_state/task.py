@@ -9,9 +9,8 @@ from pathlib import Path
 from common.data_io import ExperimentContext
 from common.psychopy_compat import (
     build_window_kwargs,
-    create_visual_window,
     configure_macos_psychopy_runtime,
-    safe_close_window,
+    get_or_create_visual_window,
 )
 from config.event_codes import RESTING_STATE
 from config.settings import (
@@ -159,8 +158,6 @@ class RestingStateTask:
         except BaseException as exc:
             task_error = exc
         finally:
-            if self.window is not None:
-                safe_close_window(self.window)
             _write_log(output_path, log_rows)
 
         if task_error is not None:
@@ -182,7 +179,8 @@ class RestingStateTask:
         self.event = event
         self.sound = sound
         self.visual = visual
-        self.window = create_visual_window(
+        self.window = get_or_create_visual_window(
+            self.context.psychopy_window,
             visual,
             **build_window_kwargs(
                 size=self.config.window_size,
@@ -194,6 +192,7 @@ class RestingStateTask:
                 allow_gui=self.config.allow_gui,
             ),
         )
+        self.context.psychopy_window = self.window
         self.title_stim = visual.TextStim(
             win=self.window,
             text="",

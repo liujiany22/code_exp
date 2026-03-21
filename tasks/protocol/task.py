@@ -11,9 +11,8 @@ from pathlib import Path
 from common.data_io import ExperimentContext
 from common.psychopy_compat import (
     build_window_kwargs,
-    create_visual_window,
     configure_macos_psychopy_runtime,
-    safe_close_window,
+    get_or_create_visual_window,
 )
 from config.settings import (
     LEARNING_CYCLE_PROTOCOL_TRIALS_FILE,
@@ -90,6 +89,10 @@ class ProtocolTask:
         self.context = context
         self.config = config
         self.stage_rows: list[dict[str, str]] = []
+        self.window = None
+        self.core = None
+        self.event = None
+        self.visual = None
 
     def run(self) -> Path:
         if self.config.test_mode:
@@ -406,28 +409,15 @@ class ProtocolTask:
         footer_color: str = "red",
     ) -> None:
         self._log_stage(step_number, stage_name, detail)
-        configure_macos_psychopy_runtime()
+        self._prepare_psychopy()
         _ = title
-        try:
-            from psychopy import core, event, visual  # type: ignore
-        except ModuleNotFoundError as exc:
-            raise RuntimeError(
-                "PsychoPy is required for protocol stage screens. "
-                f"Current interpreter: {sys.executable} | Python {sys.version.split()[0]}."
-            ) from exc
+        win = self.window
+        core = self.core
+        event = self.event
+        visual = self.visual
+        if win is None or core is None or event is None or visual is None:
+            raise RuntimeError("Protocol window is not ready.")
 
-        win = create_visual_window(
-            visual,
-            **build_window_kwargs(
-                size=self.config.window_size,
-                fullscr=self.config.fullscreen,
-                monitor=PSYCHOPY_MONITOR_NAME,
-                color=self.config.background_color,
-                color_space="named",
-                units="height",
-                allow_gui=self.config.allow_gui,
-            ),
-        )
         body_lines = self._build_stage_lines(
             subtitle=subtitle,
             detail=detail,
@@ -453,7 +443,6 @@ class ProtocolTask:
                 break
             keys = event.getKeys(keyList=["space", "return", "escape"])
             if "escape" in keys:
-                safe_close_window(win)
                 raise RuntimeError("Experiment aborted by user.")
             if "space" in keys or "return" in keys:
                 break
@@ -472,7 +461,33 @@ class ProtocolTask:
             win.flip()
             core.wait(0.1)
 
-        safe_close_window(win)
+    def _prepare_psychopy(self) -> None:
+        configure_macos_psychopy_runtime()
+        try:
+            from psychopy import core, event, visual  # type: ignore
+        except ModuleNotFoundError as exc:
+            raise RuntimeError(
+                "PsychoPy is required for protocol stage screens. "
+                f"Current interpreter: {sys.executable} | Python {sys.version.split()[0]}."
+            ) from exc
+
+        self.core = core
+        self.event = event
+        self.visual = visual
+        self.window = get_or_create_visual_window(
+            self.context.psychopy_window,
+            visual,
+            **build_window_kwargs(
+                size=self.config.window_size,
+                fullscr=self.config.fullscreen,
+                monitor=PSYCHOPY_MONITOR_NAME,
+                color=self.config.background_color,
+                color_space="named",
+                units="height",
+                allow_gui=self.config.allow_gui,
+            ),
+        )
+        self.context.psychopy_window = self.window
 
     def _log_stage(self, step_number: int, stage_name: str, detail: str) -> None:
         self.stage_rows.append(

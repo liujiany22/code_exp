@@ -7,6 +7,7 @@ import shutil
 import tempfile
 
 from common.participant_info import ParticipantInfo, write_participant_info
+from common.psychopy_compat import safe_close_window
 from config.settings import (
     DEFAULT_SESSION_ID,
     EYELINK_BACKEND,
@@ -56,6 +57,7 @@ class ExperimentContext:
     participant_info: ParticipantInfo
     persist_outputs: bool = True
     temp_root: Path | None = None
+    psychopy_window: object | None = None
 
 
 def build_context(
@@ -142,6 +144,8 @@ def build_context(
 
 
 def cleanup_context(context: ExperimentContext) -> None:
+    safe_close_window(context.psychopy_window)
+    context.psychopy_window = None
     if context.temp_root is None:
         return
     shutil.rmtree(context.temp_root, ignore_errors=True)

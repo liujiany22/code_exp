@@ -104,6 +104,30 @@ def create_visual_window(visual, **kwargs):
     raise RuntimeError("Unable to create PsychoPy window.")
 
 
+def get_or_create_visual_window(existing_window, visual, **kwargs):
+    window = existing_window
+    if _window_needs_recreation(window, **kwargs):
+        safe_close_window(window)
+        window = None
+
+    if window is None:
+        window = create_visual_window(visual, **kwargs)
+    else:
+        _apply_window_settings(window, **kwargs)
+
+    try:
+        window.clearAutoDraw()
+    except Exception:
+        pass
+
+    try:
+        window.flip()
+    except Exception:
+        pass
+
+    return window
+
+
 def safe_close_window(window) -> None:
     if window is None:
         return
@@ -122,3 +146,36 @@ def _is_macos_objc_window_error(exc: AttributeError) -> bool:
 
     message = str(exc)
     return "ObjCInstance" in message and "has no attribute b'" in message
+
+
+def _window_needs_recreation(window, **kwargs) -> bool:
+    if window is None:
+        return True
+
+    requested_fullscr = bool(kwargs.get("fullscr", False))
+    current_fullscr = bool(
+        getattr(window, "fullscr", getattr(window, "_isFullScr", False))
+    )
+    if current_fullscr != requested_fullscr:
+        return True
+
+    requested_size = tuple(int(value) for value in kwargs.get("size", ()))
+    if not requested_fullscr and requested_size:
+        current_size = tuple(int(value) for value in getattr(window, "size", ()))
+        if current_size != requested_size:
+            return True
+
+    return False
+
+
+def _apply_window_settings(window, **kwargs) -> None:
+    if "units" in kwargs:
+        window.units = kwargs["units"]
+    if "colorSpace" in kwargs:
+        window.colorSpace = kwargs["colorSpace"]
+    if "color" in kwargs:
+        window.color = kwargs["color"]
+    if hasattr(window, "backgroundImage"):
+        window.backgroundImage = ""
+    if hasattr(window, "backgroundFit"):
+        window.backgroundFit = "none"

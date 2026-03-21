@@ -14,9 +14,8 @@ from pathlib import Path
 from common.data_io import ExperimentContext
 from common.psychopy_compat import (
     build_window_kwargs,
-    create_visual_window,
     configure_macos_psychopy_runtime,
-    safe_close_window,
+    get_or_create_visual_window,
 )
 from config.event_codes import LEARNING_CYCLE
 from config.settings import (
@@ -424,8 +423,6 @@ class LearningCycleTask:
         except BaseException as exc:
             task_error = exc
         finally:
-            if self.window is not None:
-                safe_close_window(self.window)
             self.logger.write_outputs(output_dir)
             self._write_order_snapshot(order_path)
             self._write_config_snapshot(config_path)
@@ -472,7 +469,8 @@ class LearningCycleTask:
         self.core = core
         self.event = event
         self.visual = visual
-        self.window = create_visual_window(
+        self.window = get_or_create_visual_window(
+            self.context.psychopy_window,
             visual,
             **build_window_kwargs(
                 size=self.config.window_size,
@@ -484,6 +482,7 @@ class LearningCycleTask:
                 allow_gui=self.config.allow_gui,
             ),
         )
+        self.context.psychopy_window = self.window
         self._force_mouse_visible()
         self.global_clock = core.Clock()
         self.mouse = event.Mouse(win=self.window)
