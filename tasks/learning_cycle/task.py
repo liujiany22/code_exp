@@ -18,6 +18,7 @@ from common.psychopy_compat import (
     get_adaptive_text_height,
     get_adaptive_wrap_width,
     get_or_create_visual_window,
+    wrap_text_for_display,
 )
 from config.event_codes import LEARNING_CYCLE
 from config.settings import (
@@ -1590,14 +1591,16 @@ class LearningCycleTask:
         rating_moment: str,
     ) -> None:
         if rating_moment == "final":
-            self.title_stim.text = "视频播放结束"
-            self.subtitle_stim.text = (
-                f"请对第 {segment_index} 段 / 共 {total_segments} 段视频进行评分。"
+            self.title_stim.text = self._wrap_for_stim(self.title_stim, "视频播放结束")
+            self.subtitle_stim.text = self._wrap_for_stim(
+                self.subtitle_stim,
+                f"请对第 {segment_index} 段 / 共 {total_segments} 段视频进行评分。",
             )
         else:
-            self.title_stim.text = "片段播放结束"
-            self.subtitle_stim.text = (
-                f"请对第 {segment_index} 段 / 共 {total_segments} 段视频进行评分。"
+            self.title_stim.text = self._wrap_for_stim(self.title_stim, "片段播放结束")
+            self.subtitle_stim.text = self._wrap_for_stim(
+                self.subtitle_stim,
+                f"请对第 {segment_index} 段 / 共 {total_segments} 段视频进行评分。",
             )
         self.detail_stim.text = ""
         self.title_stim.draw()
@@ -1695,12 +1698,20 @@ class LearningCycleTask:
         subtitle_text: str,
         detail_text: str,
     ) -> None:
-        self.title_stim.text = main_text
-        self.subtitle_stim.text = subtitle_text
-        self.detail_stim.text = detail_text
+        self.title_stim.text = self._wrap_for_stim(self.title_stim, main_text)
+        self.subtitle_stim.text = self._wrap_for_stim(self.subtitle_stim, subtitle_text)
+        self.detail_stim.text = self._wrap_for_stim(self.detail_stim, detail_text)
         self.title_stim.draw()
         self.subtitle_stim.draw()
         self.detail_stim.draw()
+
+    def _wrap_for_stim(self, stim, text: str) -> str:
+        return wrap_text_for_display(
+            self.window,
+            text,
+            text_height=float(stim.height),
+            base_wrap_width=float(stim.wrapWidth),
+        )
 
     def _show_blank(self, seconds: float) -> None:
         if seconds <= 0:

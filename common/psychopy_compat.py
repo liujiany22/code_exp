@@ -3,6 +3,7 @@ from __future__ import annotations
 import gc
 import sys
 import time
+import unicodedata
 
 
 def configure_macos_psychopy_runtime() -> None:
@@ -95,6 +96,34 @@ def get_adaptive_wrap_width(
     aspect = get_window_aspect_ratio(window)
     available_width = aspect * horizontal_margin_ratio
     return min(base_wrap_width, max(min_wrap_width, available_width))
+
+
+def wrap_text_for_display(
+    window,
+    text: str,
+    *,
+    text_height: float,
+    base_wrap_width: float,
+    horizontal_margin_ratio: float = 0.82,
+    min_line_units: float = 12.0,
+) -> str:
+    if not isinstance(text, str) or not text:
+        return text
+
+    wrap_width = get_adaptive_wrap_width(
+        window,
+        base_wrap_width,
+        horizontal_margin_ratio=horizontal_margin_ratio,
+    )
+    line_unit_limit = max(min_line_units, (wrap_width / max(text_height, 1e-6)) * 0.92)
+
+    wrapped_lines: list[str] = []
+    for raw_line in text.splitlines():
+        if not raw_line.strip():
+            wrapped_lines.append("")
+            continue
+        wrapped_lines.extend(_wrap_text_line(raw_line, line_unit_limit))
+    return "\n".join(wrapped_lines)
 
 
 def build_window_kwargs(
@@ -217,3 +246,59 @@ def _apply_window_settings(window, **kwargs) -> None:
         window.backgroundImage = ""
     if hasattr(window, "backgroundFit"):
         window.backgroundFit = "none"
+
+
+def _wrap_text_line(text: str, line_unit_limit: float) -> list[str]:
+    if _measure_text_units(text) <= line_unit_limit:
+        return [text]
+
+    lines: list[str] = []
+    remaining = text.strip()
+    while remaining:
+        split_index = _find_wrap_index(remaining, line_unit_limit)
+        current = remaining[:split_index].rstrip()
+        if not current:
+            current = remaining[:1]
+            split_index = 1
+        lines.append(current)
+        remaining = remaining[split_index:].lstrip()
+    return lines
+
+
+def _find_wrap_index(text: str, line_unit_limit: float) -> int:
+    total_units = 0.0
+    last_break_index = -1
+
+    for index, char in enumerate(text, start=1):
+        total_units += _char_display_units(char)
+        if _is_breakable_character(char):
+            last_break_index = index
+        if total_units > line_unit_limit:
+            if last_break_index > 0:
+                return last_break_index
+            return max(1, index - 1)
+
+    return len(text)
+
+
+def _measure_text_units(text: str) -> float:
+    return sum(_char_display_units(char) for char in text)
+
+
+def _char_display_units(char: str) -> float:
+    if char.isspace():
+        return 0.35
+    east_asian = unicodedata.east_asian_width(char)
+    if east_asian in {"W", "F"}:
+        return 1.0
+    if east_asian == "A":
+        return 0.8
+    if char.isascii() and (char.isalpha() or char.isdigit()):
+        return 0.62
+    if char in "，。、；：,.!?！？":
+        return 0.5
+    return 0.7
+
+
+def _is_breakable_character(char: str) -> bool:
+    return char.isspace() or char in "，。、；：,.!?！？)]】）>}》」』"

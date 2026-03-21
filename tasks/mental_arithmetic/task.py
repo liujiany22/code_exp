@@ -14,6 +14,7 @@ from common.psychopy_compat import (
     get_adaptive_text_height,
     get_adaptive_wrap_width,
     get_or_create_visual_window,
+    wrap_text_for_display,
 )
 from config.event_codes import MENTAL_ARITHMETIC
 from config.settings import (
@@ -779,12 +780,18 @@ class MentalArithmeticTask:
         self.event.clearEvents()
         while phase_clock.getTime() < self.config.fixation_seconds:
             self._ensure_escape_not_pressed()
-            self.title_stim.text = (
-                f"Block {block_number} / {len(self.blocks)}\n"
-                f"Trial {block_trial_number} / {self.config.trials_per_block}\n\n"
-                f"{problem.question}"
+            self.title_stim.text = self._wrap_for_stim(
+                self.title_stim,
+                (
+                    f"Block {block_number} / {len(self.blocks)}\n"
+                    f"Trial {block_trial_number} / {self.config.trials_per_block}\n\n"
+                    f"{problem.question}"
+                ),
             )
-            self.subtitle_stim.text = "请先在心中完成计算。"
+            self.subtitle_stim.text = self._wrap_for_stim(
+                self.subtitle_stim,
+                "请先在心中完成计算。",
+            )
             self.title_stim.draw()
             self.subtitle_stim.draw()
             self.window.flip()
@@ -799,9 +806,12 @@ class MentalArithmeticTask:
         self.mouse.clickReset()
         previous_buttons = self.mouse.getPressed()
 
-        self.title_stim.text = (
-            f"Block {block_number} / {len(self.blocks)}\n"
-            f"Trial {block_trial_number} / {self.config.trials_per_block}"
+        self.title_stim.text = self._wrap_for_stim(
+            self.title_stim,
+            (
+                f"Block {block_number} / {len(self.blocks)}\n"
+                f"Trial {block_trial_number} / {self.config.trials_per_block}"
+            ),
         )
         self.subtitle_stim.text = ""
         self.probe_stim.text = str(problem.probe_answer)
@@ -844,12 +854,14 @@ class MentalArithmeticTask:
         while rest_clock.getTime() < self.config.block_rest_seconds:
             self._ensure_escape_not_pressed()
             remaining_seconds = max(0, int(self.config.block_rest_seconds - rest_clock.getTime()))
-            self.title_stim.text = (
-                f"休息阶段\n\n已完成 Block {completed_block_number} / {len(self.blocks)}"
+            self.title_stim.text = self._wrap_for_stim(
+                self.title_stim,
+                f"休息阶段\n\n已完成 Block {completed_block_number} / {len(self.blocks)}",
             )
-            self.subtitle_stim.text = (
+            self.subtitle_stim.text = self._wrap_for_stim(
+                self.subtitle_stim,
                 "请短暂休息，准备进入下一 block。"
-                f"\n剩余约 {remaining_seconds} 秒。"
+                f"\n剩余约 {remaining_seconds} 秒。",
             )
             self.title_stim.draw()
             self.subtitle_stim.draw()
@@ -891,8 +903,8 @@ class MentalArithmeticTask:
             if any(key in keys for key in allowed_keys):
                 return
 
-            self.title_stim.text = main_text
-            self.subtitle_stim.text = subtitle_text
+            self.title_stim.text = self._wrap_for_stim(self.title_stim, main_text)
+            self.subtitle_stim.text = self._wrap_for_stim(self.subtitle_stim, subtitle_text)
             self.title_stim.draw()
             self.subtitle_stim.draw()
             self.window.flip()
@@ -908,6 +920,19 @@ class MentalArithmeticTask:
     def _ensure_escape_not_pressed(self) -> None:
         if "escape" in self.event.getKeys(keyList=["escape"]):
             raise TaskAborted("Experiment aborted by user.")
+
+    def _wrap_for_stim(self, stim, text: str) -> str:
+        if not text:
+            return text
+        base_wrap_width = getattr(stim, "wrapWidth", None)
+        if base_wrap_width in (None, ""):
+            base_wrap_width = 1.2
+        return wrap_text_for_display(
+            self.window,
+            text,
+            text_height=float(stim.height),
+            base_wrap_width=float(base_wrap_width),
+        )
 
     def _write_generated_problems(self, output_path: Path) -> None:
         rows = [asdict(problem) for problem in self.problems]

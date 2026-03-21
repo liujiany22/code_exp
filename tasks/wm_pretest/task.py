@@ -13,8 +13,8 @@ from common.external_task import ExternalTaskSpec, load_module_from_path
 from common.psychopy_compat import (
     configure_macos_psychopy_runtime,
     get_adaptive_text_height,
-    get_adaptive_wrap_width,
     get_primary_screen_size,
+    wrap_text_for_display,
 )
 from common.ui import show_message, wait_for_continue
 from config.event_codes import WM_PRETEST
@@ -244,11 +244,20 @@ def _install_text_layout_compatibility(module: object) -> None:
             and float(height) <= 0.05
             and _should_constrain_text(text)
         ):
-            kwargs["height"] = get_adaptive_text_height(win, float(height))
-            base_wrap_width = 1.2 if wrap_width in (None, "") else float(wrap_width)
-            kwargs["wrapWidth"] = get_adaptive_wrap_width(win, base_wrap_width)
+            kwargs["height"] = get_adaptive_text_height(win, float(height), min_scale=0.72)
+            kwargs["wrapWidth"] = _wm_wrap_width(text, wrap_width)
+            kwargs["text"] = wrap_text_for_display(
+                win,
+                text,
+                text_height=float(kwargs["height"]),
+                base_wrap_width=float(kwargs["wrapWidth"]),
+                horizontal_margin_ratio=0.74,
+                min_line_units=10.0,
+            )
 
-        return original_text_stim(*args, **kwargs)
+        stim = original_text_stim(*args, **kwargs)
+        _patch_text_stim_set_text(stim)
+        return stim
 
     module.visual.TextStim = adaptive_text_stim
 
@@ -262,6 +271,38 @@ def _should_constrain_text(text: str) -> bool:
     if len(normalized) >= 10:
         return True
     return any(marker in normalized for marker in ("，", "。", "：", "；", "?", "！"))
+
+
+def _wm_wrap_width(text: str, wrap_width) -> float:
+    if wrap_width not in (None, ""):
+        return float(wrap_width)
+    return 0.96 if len(text.strip()) >= 40 else 1.08
+
+
+def _patch_text_stim_set_text(stim) -> None:
+    original_set_text = getattr(stim, "setText", None)
+    if not callable(original_set_text):
+        return
+    if getattr(original_set_text, "_code_exp_wrapped", False):
+        return
+
+    def set_text_with_wrap(text, *args, **kwargs):
+        if isinstance(text, str) and _should_constrain_text(text):
+            base_wrap_width = getattr(stim, "wrapWidth", None)
+            if base_wrap_width in (None, ""):
+                base_wrap_width = _wm_wrap_width(text, None)
+            text = wrap_text_for_display(
+                stim.win,
+                text,
+                text_height=float(getattr(stim, "height", 0.03)),
+                base_wrap_width=float(base_wrap_width),
+                horizontal_margin_ratio=0.74,
+                min_line_units=10.0,
+            )
+        return original_set_text(text, *args, **kwargs)
+
+    set_text_with_wrap._code_exp_wrapped = True  # type: ignore[attr-defined]
+    stim.setText = set_text_with_wrap
 
 
 def _install_task_timeout(

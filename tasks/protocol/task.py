@@ -15,6 +15,7 @@ from common.psychopy_compat import (
     get_adaptive_text_height,
     get_adaptive_wrap_width,
     get_or_create_visual_window,
+    wrap_text_for_display,
 )
 from config.settings import (
     LEARNING_CYCLE_PROTOCOL_TRIALS_FILE,
@@ -432,7 +433,12 @@ class ProtocolTask:
         prompt_wrap_width = get_adaptive_wrap_width(win, 1.5)
         prompt_stim = visual.TextStim(
             win=win,
-            text=prompt_text,
+            text=wrap_text_for_display(
+                win,
+                prompt_text,
+                text_height=prompt_height,
+                base_wrap_width=prompt_wrap_width,
+            ),
             font=self.config.font,
             color=self.config.text_color,
             colorSpace="named",
@@ -595,9 +601,18 @@ class ProtocolTask:
         line_gap = line_height * (0.075 / 0.044)
         line_wrap_width = get_adaptive_wrap_width(win, 1.5)
         center_y = 0.08
-        start_y = center_y + ((len(lines) - 1) * line_gap / 2)
+        expanded_lines: list[tuple[str, str]] = []
+        for line, color in lines:
+            wrapped_line = wrap_text_for_display(
+                win,
+                line,
+                text_height=line_height,
+                base_wrap_width=line_wrap_width,
+            )
+            expanded_lines.extend((segment, color) for segment in wrapped_line.splitlines() if segment)
+        start_y = center_y + ((len(expanded_lines) - 1) * line_gap / 2)
         stims = []
-        for index, (line, color) in enumerate(lines):
+        for index, (line, color) in enumerate(expanded_lines):
             stims.append(
                 visual.TextStim(
                     win=win,

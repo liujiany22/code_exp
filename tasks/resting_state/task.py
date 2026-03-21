@@ -13,6 +13,7 @@ from common.psychopy_compat import (
     get_adaptive_text_height,
     get_adaptive_wrap_width,
     get_or_create_visual_window,
+    wrap_text_for_display,
 )
 from config.event_codes import RESTING_STATE
 from config.settings import (
@@ -395,12 +396,20 @@ class RestingStateTask:
             self.window.flip()
 
     def _draw_text_page(self, title: str, subtitle: str, detail: str) -> None:
-        self.title_stim.text = title
-        self.subtitle_stim.text = subtitle
-        self.detail_stim.text = detail
+        self.title_stim.text = self._wrap_for_stim(self.title_stim, title)
+        self.subtitle_stim.text = self._wrap_for_stim(self.subtitle_stim, subtitle)
+        self.detail_stim.text = self._wrap_for_stim(self.detail_stim, detail)
         self.title_stim.draw()
         self.subtitle_stim.draw()
         self.detail_stim.draw()
+
+    def _wrap_for_stim(self, stim, text: str) -> str:
+        return wrap_text_for_display(
+            self.window,
+            text,
+            text_height=float(stim.height),
+            base_wrap_width=float(stim.wrapWidth),
+        )
 
     def _ensure_escape_not_pressed(self) -> None:
         if "escape" in self.event.getKeys(keyList=["escape"]):
