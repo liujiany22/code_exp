@@ -54,10 +54,11 @@ class WMPretestConfig:
 
 
 @dataclass
-class TaskTimeoutController:
+class TaskControlController:
     timeout_seconds: float | None
     start_time: float = 0.0
     timed_out: bool = False
+    skip_requested: bool = False
 
     def start(self) -> None:
         self.start_time = time.monotonic()
@@ -71,6 +72,9 @@ class TaskTimeoutController:
             return False
         self.timed_out = True
         return True
+
+    def request_skip(self) -> None:
+        self.skip_requested = True
 
 
 TASK_SPECS = [
@@ -373,28 +377,62 @@ def _patch_text_stim_set_text(stim) -> None:
     stim.setText = set_text_with_wrap
 
 
-def _install_task_timeout(
+def _keyboard_result_name(result) -> str:
+    candidate = result
+    if isinstance(result, tuple) and result:
+        candidate = result[0]
+    candidate = getattr(candidate, "name", candidate)
+    return str(candidate).lower()
+
+
+def _install_task_controls(
     module: object,
-    controller: TaskTimeoutController,
-) -> None:
-    if controller.timeout_seconds is None:
-        return
+    controller: TaskControlController,
+):
+    keyboard_class = getattr(module.keyboard, "Keyboard", None)
+    if keyboard_class is None:
+        return lambda: None
 
-    default_keyboard = module.deviceManager.getDevice("defaultKeyboard")
-    if default_keyboard is None:
-        return
+    original_get_keys = keyboard_class.getKeys
 
-    original_get_keys = default_keyboard.getKeys
-
-    def get_keys_with_timeout(*args, **kwargs):
+    def get_keys_with_controls(self, *args, **kwargs):
         key_list = kwargs.get("keyList")
         if key_list is None and args:
             key_list = args[0]
-        if controller.should_timeout() and (key_list is None or "escape" in key_list):
-            return ["escape"]
-        return original_get_keys(*args, **kwargs)
+        requested_keys = (
+            {str(key).lower() for key in key_list}
+            if isinstance(key_list, (list, tuple, set))
+            else None
+        )
+        results = original_get_keys(self, *args, **kwargs)
+        filtered_results = []
+        skip_detected = False
+        for result in results:
+            if _keyboard_result_name(result) == "p":
+                skip_detected = True
+                continue
+            filtered_results.append(result)
 
-    default_keyboard.getKeys = get_keys_with_timeout
+        if requested_keys is None or "p" not in requested_keys:
+            skip_results = original_get_keys(self, keyList=["p", "P"], waitRelease=False)
+            if skip_results:
+                skip_detected = True
+
+        if skip_detected:
+            controller.request_skip()
+
+        if controller.skip_requested and requested_keys is not None and "escape" in requested_keys:
+            return ["escape"]
+        if controller.should_timeout() and requested_keys is not None and "escape" in requested_keys:
+            return ["escape"]
+        return filtered_results
+
+    keyboard_class.getKeys = get_keys_with_controls
+
+    def restore() -> None:
+        keyboard_class.getKeys = original_get_keys
+
+    return restore
 
 
 @contextmanager
@@ -443,7 +481,8 @@ def _run_external_psychopy_task(
     this_exp = None
     win = None
     status = "completed"
-    timeout_controller = TaskTimeoutController(timeout_seconds=config.task_timeout_seconds)
+    controller = TaskControlController(timeout_seconds=config.task_timeout_seconds)
+    restore_keyboard_controls = lambda: None
 
     try:
         # The exported PsychoPy scripts concatenate `dataDir + os.sep + filename`,
@@ -453,20 +492,23 @@ def _run_external_psychopy_task(
         win = module.setupWindow(expInfo=exp_info, win=context.psychopy_window)
         context.psychopy_window = win
         module.setupDevices(expInfo=exp_info, thisExp=this_exp, win=win)
-        _install_task_timeout(module, timeout_controller)
-        timeout_controller.start()
+        restore_keyboard_controls = _install_task_controls(module, controller)
+        controller.start()
         module.run(
             expInfo=exp_info,
             thisExp=this_exp,
             win=win,
             globalClock="float",
         )
-        if timeout_controller.timed_out:
+        if controller.skip_requested:
+            status = "skipped"
+        elif controller.timed_out:
             status = "timed_out"
     except BaseException:
         status = "failed"
         raise
     finally:
+        restore_keyboard_controls()
         if this_exp is not None:
             module.saveData(thisExp=this_exp)
             if hasattr(module, "endExperiment"):

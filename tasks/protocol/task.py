@@ -120,28 +120,28 @@ class ProtocolTask:
             subtitle="为了帮助您更好地熟悉实验流程，接下来是练习环节。",
             detail="按空格进入练习。",
         )
-        self._show_practice_stage(
+        if not self._show_practice_stage(
             step_number=2,
             stage_name="静息引导语-练习",
             title="静息练习",
             subtitle=self._rest_intro_text(first_phase="eyes_open", seconds=3),
             detail="准备好后按空格开始静息练习。",
-        )
-        run_resting_state(
-            self.context,
-            config=RestingStateConfig(
-                eyes_open_seconds=3,
-                eyes_closed_seconds=3,
-                cycles=1,
-                auto_advance=self.config.auto_advance,
-                phase_order=("eyes_open", "eyes_closed"),
-                randomize_phase_order=False,
-                show_task_intro=False,
-                show_phase_intro=False,
-                show_completion=False,
-                play_phase_transition_tone=True,
-            ),
-        )
+        ):
+            run_resting_state(
+                self.context,
+                config=RestingStateConfig(
+                    eyes_open_seconds=3,
+                    eyes_closed_seconds=3,
+                    cycles=1,
+                    auto_advance=self.config.auto_advance,
+                    phase_order=("eyes_open", "eyes_closed"),
+                    randomize_phase_order=False,
+                    show_task_intro=False,
+                    show_phase_intro=False,
+                    show_completion=False,
+                    play_phase_transition_tone=True,
+                ),
+            )
         run_wm_pretest(
             self.context,
             config=WMPretestConfig(
@@ -164,7 +164,7 @@ class ProtocolTask:
                 show_wrapper_completion=False,
             ),
         )
-        self._show_practice_stage(
+        if not self._show_practice_stage(
             step_number=8,
             stage_name="心算介绍-练习",
             title="心算练习",
@@ -175,23 +175,23 @@ class ProtocolTask:
                 "当出现蓝色数字时，请判断它是否等于正确答案。"
             ),
             detail="如果蓝色数字等于正确答案，请按鼠标左键；如果不等，请按鼠标右键。按空格进入练习。",
-        )
-        run_mental_arithmetic(
-            self.context,
-            config=MentalArithmeticConfig(
-                auto_advance=self.config.auto_advance,
-                show_instructions=False,
-                show_completion=False,
-                fixation_seconds=2.0,
-                pre_response_blank_seconds=0.2,
-                response_timeout_seconds=3.0,
-                inter_trial_seconds=0.2,
-                block_count=1,
-                trials_per_block=1,
-                block_rest_seconds=0.0,
-                trial_counts={"QE": 1, "QM": 0, "QH": 0},
-            ),
-        )
+        ):
+            run_mental_arithmetic(
+                self.context,
+                config=MentalArithmeticConfig(
+                    auto_advance=self.config.auto_advance,
+                    show_instructions=False,
+                    show_completion=False,
+                    fixation_seconds=2.0,
+                    pre_response_blank_seconds=0.2,
+                    response_timeout_seconds=3.0,
+                    inter_trial_seconds=0.2,
+                    block_count=1,
+                    trials_per_block=1,
+                    block_rest_seconds=0.0,
+                    trial_counts={"QE": 1, "QM": 0, "QH": 0},
+                ),
+            )
         self._show_practice_stage(
             step_number=10,
             stage_name="视频学习介绍-练习",
@@ -255,7 +255,7 @@ class ProtocolTask:
         step_number: int,
         test_mode: bool,
         stage_name: str | None,
-    ) -> None:
+    ) -> bool:
         if test_mode and stage_name is not None:
             subtitle = (
                 "现在开始正式实验测试。\n"
@@ -266,7 +266,7 @@ class ProtocolTask:
         else:
             subtitle = "现在开始正式实验。"
 
-        self._show_stage(
+        return self._show_stage(
             step_number=step_number,
             stage_name="正式开始",
             title="正式实验",
@@ -276,7 +276,7 @@ class ProtocolTask:
 
     def _run_formal_rest_stage(self, step_number: int, test_mode: bool) -> None:
         rest_seconds = 3 if test_mode else 180
-        self._show_stage(
+        if self._show_stage(
             step_number=step_number,
             stage_name="静息引导语-正式",
             title="静息态",
@@ -285,7 +285,8 @@ class ProtocolTask:
                 seconds=rest_seconds,
             ),
             detail="准备好后按空格开始正式静息态记录。",
-        )
+        ):
+            return
         run_resting_state(
             self.context,
             config=RestingStateConfig(
@@ -334,7 +335,7 @@ class ProtocolTask:
         step_number: int,
         test_mode: bool,
     ) -> None:
-        self._show_stage(
+        if self._show_stage(
             step_number=step_number,
             stage_name="心算介绍-正式",
             title="心算任务",
@@ -345,7 +346,8 @@ class ProtocolTask:
                 "当出现蓝色数字时，请判断它是否等于正确答案。"
             ),
             detail="如果蓝色数字等于正确答案，请按鼠标左键；如果不等，请按鼠标右键。",
-        )
+        ):
+            return
         run_mental_arithmetic(
             self.context,
             config=(
@@ -377,7 +379,7 @@ class ProtocolTask:
         test_mode: bool,
     ) -> None:
         _ = test_mode
-        self._show_stage(
+        if self._show_stage(
             step_number=step_number,
             stage_name="视频学习引导语",
             title="视频学习任务",
@@ -386,7 +388,8 @@ class ProtocolTask:
                 "前测和后测均为：先口头复述，再完成 10 道判断题。\n"
                 "视频按 3 分钟切分，段间和最后会出现 1-5 评分条。按空格开始任务。"
             ),
-        )
+        ):
+            return
         run_learning_cycle(
             self.context,
             config=LearningCycleConfig(
@@ -410,7 +413,7 @@ class ProtocolTask:
         detail: str,
         footer_text: str = "",
         footer_color: str = "red",
-    ) -> None:
+    ) -> bool:
         self._log_stage(step_number, stage_name, detail)
         self._prepare_psychopy()
         _ = title
@@ -451,11 +454,15 @@ class ProtocolTask:
         while True:
             if self.config.auto_advance:
                 break
-            keys = event.getKeys(keyList=["space", "return", "escape"])
-            if "escape" in keys:
+            keys = event.getKeys(keyList=["space", "return", "escape", "p", "P"])
+            normalized_keys = {str(key).lower() for key in keys}
+            if "escape" in normalized_keys:
                 raise RuntimeError("Experiment aborted by user.")
-            if "space" in keys or "return" in keys:
-                break
+            if "p" in normalized_keys:
+                self._log_stage(step_number, f"{stage_name}-skipped", "Skipped via P/p.")
+                return True
+            if "space" in normalized_keys or "return" in normalized_keys:
+                return False
 
             for stim in body_stims:
                 stim.draw()
@@ -470,6 +477,7 @@ class ProtocolTask:
                 prompt_stim.draw()
             win.flip()
             core.wait(0.1)
+        return False
 
     def _prepare_psychopy(self) -> None:
         configure_macos_psychopy_runtime()
@@ -531,8 +539,8 @@ class ProtocolTask:
         title: str,
         subtitle: str,
         detail: str,
-    ) -> None:
-        self._show_stage(
+    ) -> bool:
+        return self._show_stage(
             step_number=step_number,
             stage_name=stage_name,
             title=title,

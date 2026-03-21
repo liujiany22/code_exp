@@ -68,6 +68,10 @@ class TaskAborted(RuntimeError):
     pass
 
 
+class TaskSkipped(RuntimeError):
+    pass
+
+
 def _write_log(output_path: Path, rows: list[dict[str, object]]) -> None:
     with output_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
@@ -122,12 +126,15 @@ class RestingStateTask:
         output_path = self.context.output_dir / "resting_state_events.csv"
         log_rows: list[dict[str, object]] = []
         task_error: BaseException | None = None
+        task_started = False
+        task_finished = False
 
         try:
             self._prepare_psychopy()
             if self.config.show_task_intro:
                 self._show_intro()
             _emit_event(self.context, log_rows, 0, "task", "task_start")
+            task_started = True
 
             for cycle_index in range(1, self.config.cycles + 1):
                 phase_order = self._phase_order_for_cycle(cycle_index)
@@ -159,8 +166,12 @@ class RestingStateTask:
                     )
 
             _emit_event(self.context, log_rows, 0, "task", "task_end")
+            task_finished = True
             if self.config.show_completion:
                 self._show_completion()
+        except TaskSkipped:
+            if task_started and not task_finished:
+                _emit_event(self.context, log_rows, 0, "task", "task_end")
         except BaseException as exc:
             task_error = exc
         finally:
@@ -278,10 +289,9 @@ class RestingStateTask:
             if self.config.auto_advance:
                 return
 
-            keys = self.event.getKeys(keyList=["space", "return", "escape"])
-            if "escape" in keys:
-                raise TaskAborted("Experiment aborted by user.")
-            if "space" in keys or "return" in keys:
+            keys = self.event.getKeys(keyList=["space", "return", "escape", "p", "P"])
+            self._handle_control_keys(keys)
+            if any(str(key).lower() in {"space", "return"} for key in keys):
                 return
 
             self._draw_text_page(title, subtitle, detail)
@@ -412,8 +422,15 @@ class RestingStateTask:
         )
 
     def _ensure_escape_not_pressed(self) -> None:
-        if "escape" in self.event.getKeys(keyList=["escape"]):
+        self._handle_control_keys(self.event.getKeys(keyList=["escape", "p", "P"]))
+
+    @staticmethod
+    def _handle_control_keys(keys: list[object]) -> None:
+        normalized_keys = {str(key).lower() for key in keys}
+        if "escape" in normalized_keys:
             raise TaskAborted("Experiment aborted by user.")
+        if "p" in normalized_keys:
+            raise TaskSkipped("Resting-state task skipped by operator.")
 
 
 def run(

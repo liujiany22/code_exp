@@ -190,6 +190,10 @@ class TaskAborted(RuntimeError):
     pass
 
 
+class TaskSkipped(RuntimeError):
+    pass
+
+
 class TrialOrderBuilder:
     @staticmethod
     def balanced_latin_square(size: int) -> list[list[int]]:
@@ -397,6 +401,8 @@ class LearningCycleTask:
         order_path = output_dir / "learning_cycle_order.csv"
 
         task_error: BaseException | None = None
+        task_started = False
+        task_finished = False
 
         try:
             self._emit_event(
@@ -406,6 +412,7 @@ class LearningCycleTask:
                 event_code=LEARNING_CYCLE["task_start"],
                 detail=f"counterbalance_row={self.counterbalance_row}",
             )
+            task_started = True
             if self.config.show_task_intro:
                 self._show_task_intro()
             for trial_number, trial in enumerate(self.ordered_trials, start=1):
@@ -422,8 +429,18 @@ class LearningCycleTask:
                 event_code=LEARNING_CYCLE["task_end"],
                 detail=f"completed_trials={len(self.ordered_trials)}",
             )
+            task_finished = True
             if self.config.show_completion:
                 self._show_completion()
+        except TaskSkipped:
+            if task_started and not task_finished:
+                self._emit_event(
+                    trial_number="END",
+                    trial=None,
+                    event_name="task_end",
+                    event_code=LEARNING_CYCLE["task_end"],
+                    detail="skipped_by_operator",
+                )
         except BaseException as exc:
             task_error = exc
         finally:
@@ -1036,10 +1053,12 @@ class LearningCycleTask:
         }.get(phase_name, phase_name)
 
         while True:
-            keys = self.event.getKeys(keyList=["f", "j", "escape"], timeStamped=response_clock)
+            keys = self.event.getKeys(
+                keyList=["f", "j", "escape", "p", "P"],
+                timeStamped=response_clock,
+            )
+            self._handle_control_keys(keys)
             for key, response_time in keys:
-                if key == "escape":
-                    raise TaskAborted("Experiment aborted by user.")
                 if key == "f":
                     return "true", response_time
                 if key == "j":
@@ -1154,10 +1173,9 @@ class LearningCycleTask:
             return 0.0
 
         while True:
-            keys = self.event.getKeys(keyList=["space", "return", "escape"])
-            if "escape" in keys:
-                raise TaskAborted("Experiment aborted by user.")
-            if "space" in keys or "return" in keys:
+            keys = self.event.getKeys(keyList=["space", "return", "escape", "p", "P"])
+            self._handle_control_keys(keys)
+            if any(str(key).lower() in {"space", "return"} for key in keys):
                 return recall_clock.getTime()
 
             self._draw_text_page(
@@ -1415,14 +1433,29 @@ class LearningCycleTask:
             "error",
             video_path,
         ]
-        completed = subprocess.run(
+        process = subprocess.Popen(
             command,
-            check=False,
             capture_output=True,
             text=True,
         )
-        if completed.returncode != 0:
-            error_text = completed.stderr.strip() or completed.stdout.strip()
+        try:
+            while True:
+                self._ensure_escape_not_pressed()
+                return_code = process.poll()
+                if return_code is not None:
+                    break
+                self.core.wait(0.05)
+        except (TaskAborted, TaskSkipped):
+            process.terminate()
+            try:
+                process.wait(timeout=2.0)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=2.0)
+            raise
+
+        if return_code != 0:
+            error_text = process.stderr.read().strip() or process.stdout.read().strip()
             raise RuntimeError(f"ffplay playback failed: {error_text}")
 
     def _movie_finished(self, movie_stim) -> bool:
@@ -1526,12 +1559,11 @@ class LearningCycleTask:
         while True:
             self._ensure_escape_not_pressed()
             keys = self.event.getKeys(
-                keyList=list(key_to_rating.keys()) + ["escape"],
+                keyList=list(key_to_rating.keys()) + ["escape", "p", "P"],
                 timeStamped=response_clock,
             )
+            self._handle_control_keys(keys)
             for key, response_time in keys:
-                if key == "escape":
-                    raise TaskAborted("Experiment aborted by user.")
                 rating_value = key_to_rating[key]
                 self._emit_event(
                     trial_number=trial_number,
@@ -1692,10 +1724,9 @@ class LearningCycleTask:
             if self.config.auto_advance:
                 return
 
-            keys = self.event.getKeys(keyList=["space", "escape", "return"])
-            if "escape" in keys:
-                raise TaskAborted("Experiment aborted by user.")
-            if "space" in keys or "return" in keys:
+            keys = self.event.getKeys(keyList=["space", "escape", "return", "p", "P"])
+            self._handle_control_keys(keys)
+            if any(str(key).lower() in {"space", "return"} for key in keys):
                 return
 
             self._draw_text_page(main_text, subtitle_text, detail_text)
@@ -1734,8 +1765,20 @@ class LearningCycleTask:
             self.window.flip()
 
     def _ensure_escape_not_pressed(self) -> None:
-        if "escape" in self.event.getKeys(keyList=["escape"]):
+        self._handle_control_keys(self.event.getKeys(keyList=["escape", "p", "P"]))
+
+    @staticmethod
+    def _key_name(key) -> str:
+        if isinstance(key, tuple) and key:
+            return str(key[0]).lower()
+        return str(key).lower()
+
+    def _handle_control_keys(self, keys: list[object]) -> None:
+        normalized_keys = {self._key_name(key) for key in keys}
+        if "escape" in normalized_keys:
             raise TaskAborted("Experiment aborted by user.")
+        if "p" in normalized_keys:
+            raise TaskSkipped("Learning-cycle task skipped by operator.")
 
     def _resolve_video_path(self, video_file: str) -> str:
         candidate = Path(video_file)

@@ -208,6 +208,10 @@ class TaskAborted(RuntimeError):
     pass
 
 
+class TaskSkipped(RuntimeError):
+    pass
+
+
 class QValueCalculator:
     @staticmethod
     def carry_count(left_operand: int, right_operand: int) -> int:
@@ -458,6 +462,8 @@ class MentalArithmeticTask:
         config_path = output_dir / "mental_arithmetic_config.json"
 
         task_error: BaseException | None = None
+        task_started = False
+        task_finished = False
 
         try:
             self._emit_event(
@@ -467,6 +473,7 @@ class MentalArithmeticTask:
                 event_name="task_start",
                 event_code=MENTAL_ARITHMETIC["task_start"],
             )
+            task_started = True
             if self.config.show_instructions:
                 self._show_instructions()
 
@@ -479,8 +486,18 @@ class MentalArithmeticTask:
                 event_name="task_end",
                 event_code=MENTAL_ARITHMETIC["task_end"],
             )
+            task_finished = True
             if self.config.show_completion:
                 self._show_completion()
+        except TaskSkipped:
+            if task_started and not task_finished:
+                self._emit_event(
+                    block_number="END",
+                    trial_number="END",
+                    difficulty_level="NA",
+                    event_name="task_end",
+                    event_code=MENTAL_ARITHMETIC["task_end"],
+                )
         except BaseException as exc:
             task_error = exc
         finally:
@@ -897,10 +914,9 @@ class MentalArithmeticTask:
             if auto_advance:
                 return
 
-            keys = self.event.getKeys(keyList=list(allowed_keys) + ["escape"])
-            if "escape" in keys:
-                raise TaskAborted("Experiment aborted by user.")
-            if any(key in keys for key in allowed_keys):
+            keys = self.event.getKeys(keyList=list(allowed_keys) + ["escape", "p", "P"])
+            self._handle_control_keys(keys)
+            if any(str(key).lower() in allowed_keys for key in keys):
                 return
 
             self.title_stim.text = self._wrap_for_stim(self.title_stim, main_text)
@@ -918,8 +934,15 @@ class MentalArithmeticTask:
             self.window.flip()
 
     def _ensure_escape_not_pressed(self) -> None:
-        if "escape" in self.event.getKeys(keyList=["escape"]):
+        self._handle_control_keys(self.event.getKeys(keyList=["escape", "p", "P"]))
+
+    @staticmethod
+    def _handle_control_keys(keys: list[object]) -> None:
+        normalized_keys = {str(key).lower() for key in keys}
+        if "escape" in normalized_keys:
             raise TaskAborted("Experiment aborted by user.")
+        if "p" in normalized_keys:
+            raise TaskSkipped("Mental-arithmetic task skipped by operator.")
 
     def _wrap_for_stim(self, stim, text: str) -> str:
         if not text:
