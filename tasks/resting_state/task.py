@@ -391,8 +391,8 @@ class RestingStateTask:
         self.event.clearEvents()
         while phase_clock.getTime() < seconds:
             self._ensure_escape_not_pressed()
-            if show_fixation:
-                self.fixation_stim.draw()
+            _ = show_fixation
+            self.fixation_stim.draw()
             self.window.flip()
 
     def _draw_text_page(self, title: str, subtitle: str, detail: str) -> None:

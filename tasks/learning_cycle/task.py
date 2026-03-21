@@ -383,6 +383,7 @@ class LearningCycleTask:
         self.title_stim = None
         self.subtitle_stim = None
         self.detail_stim = None
+        self.fixation_stim = None
         self.mouse = None
         self.segment_rating_boxes = []
         self.segment_rating_labels = []
@@ -522,6 +523,14 @@ class LearningCycleTask:
             height=detail_height,
             pos=(0, -0.38),
             wrapWidth=text_wrap_width,
+        )
+        self.fixation_stim = visual.TextStim(
+            win=self.window,
+            text="+",
+            font=self.config.font,
+            color=self.config.text_color,
+            colorSpace="named",
+            height=get_adaptive_text_height(self.window, 0.08),
         )
         self.segment_rating_boxes = []
         self.segment_rating_labels = []
@@ -1721,6 +1730,7 @@ class LearningCycleTask:
         self.event.clearEvents()
         while blank_clock.getTime() < seconds:
             self._ensure_escape_not_pressed()
+            self.fixation_stim.draw()
             self.window.flip()
 
     def _ensure_escape_not_pressed(self) -> None:
