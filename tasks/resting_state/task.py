@@ -15,6 +15,7 @@ from common.psychopy_compat import (
 from config.event_codes import RESTING_STATE
 from config.settings import (
     DEFAULT_TRIGGER_WIDTH_MS,
+    PSYCHOPY_AUDIO_LIB,
     PSYCHOPY_MONITOR_NAME,
     REST_ALLOW_GUI,
     REST_BACKGROUND_COLOR,
@@ -111,6 +112,8 @@ class RestingStateTask:
         self.detail_stim = None
         self.fixation_stim = None
         self.sound = None
+        self.transition_tone = None
+        self._tone_warning_printed = False
 
     def run(self) -> Path:
         output_path = self.context.output_dir / "resting_state_events.csv"
@@ -168,6 +171,8 @@ class RestingStateTask:
     def _prepare_psychopy(self) -> None:
         configure_macos_psychopy_runtime()
         try:
+            from psychopy import prefs  # type: ignore
+            prefs.hardware["audioLib"] = PSYCHOPY_AUDIO_LIB
             from psychopy import core, event, sound, visual  # type: ignore
         except ModuleNotFoundError as exc:
             raise RuntimeError(
@@ -230,6 +235,7 @@ class RestingStateTask:
             colorSpace="named",
             height=0.08,
         )
+        self._prepare_transition_tone()
 
     def _show_intro(self) -> None:
         self._wait_for_continue(
@@ -311,14 +317,67 @@ class RestingStateTask:
         )
 
     def _play_tone(self) -> None:
+        if self._play_psychopy_tone():
+            return
+        if self._play_windows_fallback_tone():
+            return
+        self._warn_tone_unavailable()
+
+    def _prepare_transition_tone(self) -> None:
+        self.transition_tone = None
         if self.sound is None:
             return
         try:
             cue = self.sound.Sound(value=880, secs=0.2, stereo=True)
+            set_volume = getattr(cue, "setVolume", None)
+            if callable(set_volume):
+                set_volume(1.0)
+            self.transition_tone = cue
+        except Exception:
+            self.transition_tone = None
+
+    def _play_psychopy_tone(self) -> bool:
+        cue = self.transition_tone
+        if cue is None:
+            self._prepare_transition_tone()
+            cue = self.transition_tone
+        if cue is None:
+            return False
+        try:
+            stop = getattr(cue, "stop", None)
+            if callable(stop):
+                stop()
             cue.play()
             self.core.wait(0.25)
+            return True
         except Exception:
-            pass
+            return False
+
+    def _play_windows_fallback_tone(self) -> bool:
+        if sys.platform != "win32":
+            return False
+        try:
+            import winsound
+
+            winsound.Beep(880, 200)
+            return True
+        except Exception:
+            try:
+                import winsound
+
+                winsound.MessageBeep()
+                return True
+            except Exception:
+                return False
+
+    def _warn_tone_unavailable(self) -> None:
+        if self._tone_warning_printed:
+            return
+        self._tone_warning_printed = True
+        print(
+            "Warning: resting-state transition tone could not be played. "
+            f"Configured audio backend={PSYCHOPY_AUDIO_LIB!r}."
+        )
 
     def _run_phase(self, seconds: int, show_fixation: bool) -> None:
         phase_clock = self.core.Clock()
