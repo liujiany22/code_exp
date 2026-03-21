@@ -205,6 +205,7 @@ def _install_window_compatibility(module: object) -> None:
                 pass
 
         created_window = original_setup_window(expInfo=expInfo, win=win)
+        _apply_default_black_background(created_window)
         force_mouse_visible(created_window)
 
         if WM_PRETEST_SKIP_FRAME_RATE_CHECK:
@@ -226,6 +227,45 @@ def _install_window_compatibility(module: object) -> None:
         module.visual.Window.getActualFrameRate = safe_get_frame_rate
 
     module.setupWindow = setup_window_with_defaults
+
+
+def _install_background_compatibility(module: object) -> None:
+    original_image_stim = module.visual.ImageStim
+
+    def image_stim_with_black_background(*args, **kwargs):
+        image = kwargs.get("image")
+        if image is None and len(args) >= 3:
+            image = args[2]
+
+        if _is_wm_background_image(image):
+            win = kwargs.get("win")
+            if win is None and args:
+                win = args[0]
+            size = kwargs.get("size", (3, 3))
+            if not isinstance(size, (tuple, list)) or len(size) != 2:
+                size = (3, 3)
+            pos = kwargs.get("pos", (0, 0))
+            return module.visual.Rect(
+                win=win,
+                name=kwargs.get("name", "background"),
+                units=getattr(win, "units", "height"),
+                width=float(size[0]),
+                height=float(size[1]),
+                ori=float(kwargs.get("ori", 0.0)),
+                pos=pos,
+                draggable=bool(kwargs.get("draggable", False)),
+                lineWidth=0,
+                lineColor=[-1, -1, -1],
+                fillColor=[-1, -1, -1],
+                colorSpace="rgb",
+                opacity=kwargs.get("opacity", None),
+                depth=float(kwargs.get("depth", 0.0)),
+                interpolate=True,
+            )
+
+        return original_image_stim(*args, **kwargs)
+
+    module.visual.ImageStim = image_stim_with_black_background
 
 
 def _install_text_layout_compatibility(module: object) -> None:
@@ -277,6 +317,34 @@ def _wm_wrap_width(text: str, wrap_width) -> float:
     if wrap_width not in (None, ""):
         return float(wrap_width)
     return 0.96 if len(text.strip()) >= 40 else 1.08
+
+
+def _apply_default_black_background(window) -> None:
+    try:
+        window.colorSpace = "rgb"
+    except Exception:
+        pass
+    try:
+        window.color = [-1, -1, -1]
+    except Exception:
+        pass
+    try:
+        window.backgroundImage = ""
+    except Exception:
+        pass
+    try:
+        window.backgroundFit = "none"
+    except Exception:
+        pass
+
+
+def _is_wm_background_image(image) -> bool:
+    if not image:
+        return False
+    try:
+        return Path(str(image)).name.lower() == "background.jpg"
+    except Exception:
+        return False
 
 
 def _patch_text_stim_set_text(stim) -> None:
@@ -365,6 +433,7 @@ def _run_external_psychopy_task(
         module = load_module_from_path(module_name=module_name, script_path=spec.script_path)
     _install_keyboard_compatibility(module)
     _install_window_compatibility(module)
+    _install_background_compatibility(module)
     _install_text_layout_compatibility(module)
     exp_info = _prepare_exp_info(module, context)
 
